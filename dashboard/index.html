@@ -1,0 +1,266 @@
+<!doctype html>
+<!--
+  Grant Application Assistant: layout prototype (sample data only, nothing is connected).
+  Run it: double-click this file, or from this folder run `python3 -m http.server 8000`
+  and open http://localhost:8000
+  Jump straight to a screen: index.html#login, index.html#pi, index.html#staff
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grant Application Assistant (layout prototype)</title>
+<style>
+:root{--bg:#F4F6F9;--ink:#1B2430;--muted:#4A5565;--line:#D5DAE1;--navy:#14284B;--blue:#1F4E8C;--chip:#6B7686;--bubble:#E9EEF6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4}
+[hidden]{display:none!important}
+h1,h2{margin:0}
+h2{font-size:15px;font-weight:600}
+small{font-size:12px}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.sr{position:absolute;left:-9999px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h2{margin-bottom:10px}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+.card-head h2{margin:0}
+.btn{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:8px 14px;font:inherit;font-size:14px;min-height:44px;cursor:pointer}
+.btn:hover{background:#EEF3FA}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.primary:hover{background:#18407A}
+.tag{display:inline-block;border:1px solid var(--chip);border-radius:20px;padding:2px 10px;font-size:12px;color:#3A4350;white-space:nowrap;background:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #E6E9EE;font-size:14px}
+.input{flex:1;min-width:0;padding:10px;border:1px solid #8A94A3;border-radius:6px;font:inherit}
+.top{background:var(--navy);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 28px}
+.top span{display:flex;align-items:center;gap:12px}
+.layout{display:flex;gap:20px;padding:20px 28px;flex-wrap:wrap;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:20px}
+.split{display:flex;gap:20px;flex-wrap:wrap}
+.split>.card{flex:1;min-width:260px}
+/* login */
+.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px}
+.login h1{font-size:28px}
+.login p{margin:0;color:var(--muted);font-size:14px}
+.login-cards{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;width:100%;max-width:900px;margin-top:16px}
+.login-cards form{flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px}
+.login-cards h2{font-size:18px;margin:0}
+.login-cards .note{font-size:13px}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px;min-height:560px}
+.chat h2{margin:0}
+.chat .about{align-self:flex-start}
+.log{display:flex;flex-direction:column;gap:10px;flex:1;overflow:auto}
+.msg{border-radius:8px;padding:10px;font-size:14px;max-width:85%}
+.msg.me{background:var(--bubble);align-self:flex-end}
+.msg.bot{background:var(--bg);border:1px solid var(--line)}
+.send{display:flex;gap:8px}
+/* PI */
+#view-pi .main{flex:2;min-width:520px}
+#view-pi .chat{flex:1;min-width:300px;max-width:420px}
+.week{display:flex;gap:6px;font-size:12px;text-align:center;margin-bottom:8px}
+.day{flex:1;border:1px solid var(--line);border-radius:6px;padding:6px 0}
+.day.today{border:2px solid var(--blue);padding:5px 0;font-weight:600}
+/* staff */
+#view-staff .side{width:250px;min-width:230px}
+#view-staff .center{flex:2;min-width:420px}
+#view-staff .chat{flex:1;min-width:300px;max-width:380px;min-height:600px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--chip);background:#fff;border-radius:20px;padding:6px 12px;font:inherit;font-size:12px;color:#3A4350;cursor:pointer;min-height:32px}
+.chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.req{display:block;width:100%;text-align:left;margin-bottom:8px}
+.title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.title-row strong{font-size:18px}
+.actions{display:flex;gap:8px}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN: two separate entrances -->
+<section id="view-login" class="login">
+  <h1>Grant Application Assistant</h1>
+  <p>Layout prototype with sample data. Sign-in is not connected yet.</p>
+  <div class="login-cards">
+    <form class="card" data-go="pi">
+      <h2>Investigator sign in</h2>
+      <label for="pi-id">NetID</label><input class="input" id="pi-id" type="text" autocomplete="off">
+      <label for="pi-pw">Password</label><input class="input" id="pi-pw" type="password" autocomplete="off">
+      <button class="btn primary" type="submit">Sign in as investigator</button>
+      <p class="note">Opens: deadlines, request status, ready documents, assistant</p>
+    </form>
+    <form class="card" data-go="staff">
+      <h2>Staff sign in (SPS and Laura)</h2>
+      <label for="st-id">NetID</label><input class="input" id="st-id" type="text" autocomplete="off">
+      <label for="st-pw">Password</label><input class="input" id="st-pw" type="password" autocomplete="off">
+      <button class="btn primary" type="submit">Sign in as staff</button>
+      <p class="note">Opens: all requests, grant info, submitted documents, assistant</p>
+    </form>
+  </div>
+</section>
+
+<!-- PI DASHBOARD -->
+<section id="view-pi" hidden>
+  <header class="top"><strong>Grant Application Assistant</strong><span>[PI name] · Investigator <button class="btn" type="button" data-go="login">Sign out</button></span></header>
+  <main class="layout">
+    <div class="col main">
+      <div class="card">
+        <div class="card-head"><h2>Request status</h2><button class="btn primary" type="button" data-toast="New request">New request</button></div>
+        <div id="pi-requests"></div>
+      </div>
+      <div class="split">
+        <div class="card"><h2>Deadlines: <span id="month"></span></h2><div class="week" id="week"></div><div id="deadlines"></div></div>
+        <div class="card">
+          <div class="card-head"><h2>Ready to submit</h2><button class="btn" type="button" data-toast="Upload">Upload</button></div>
+          <div id="ready"></div>
+        </div>
+      </div>
+    </div>
+    <aside class="card chat" id="chat-pi"></aside>
+  </main>
+</section>
+
+<!-- STAFF DASHBOARD (SPS and Laura) -->
+<section id="view-staff" hidden>
+  <header class="top"><strong>Grant Application Assistant</strong><span>[Staff name] · SPS / Laura <button class="btn" type="button" data-go="login">Sign out</button></span></header>
+  <main class="layout">
+    <div class="card side">
+      <h2>All requests</h2>
+      <div class="chips" id="chips">
+        <button class="chip" type="button" data-f="All" aria-pressed="true">All</button>
+        <button class="chip" type="button" data-f="Needs review" aria-pressed="false">Needs review</button>
+        <button class="chip" type="button" data-f="Approved" aria-pressed="false">Approved</button>
+      </div>
+      <div id="s-list"></div>
+    </div>
+    <div class="col center">
+      <div class="card"><div class="title-row">
+        <span><strong id="s-title"></strong> <span class="tag" id="s-status"></span></span>
+        <span class="actions"><button class="btn" type="button" id="s-changes">Request changes</button><button class="btn primary" type="button" id="s-approve">Approve</button></span>
+      </div></div>
+      <div class="card"><h2>Grant info</h2><div class="info" id="s-info"></div></div>
+      <div class="card"><h2>Documents submitted</h2><div id="s-docs"></div></div>
+      <div class="card"><h2>Activity</h2><div id="s-activity"></div></div>
+    </div>
+    <aside class="card chat" id="chat-staff"></aside>
+  </main>
+</section>
+
+<div id="toast" role="status"></div>
+
+<script>
+/* ---------- sample data (replace with real API calls later) ---------- */
+const piRequests = [
+  {name:'[Announcement name]', number:'[Announcement number]', status:'Incomplete: 3 items missing'},
+  {name:'[Announcement name]', number:'[Announcement number]', status:'In review by SPS'},
+  {name:'[Announcement name]', number:'[Announcement number]', status:'Ready to submit'}
+];
+const deadlines = [
+  {date:'[Date]', text:'[Request]: [item due]', tag:'Soon'},
+  {date:'[Date]', text:'[Request]: [item due]', tag:'Later'}
+];
+const ready = ['[Budget].xlsx','[Budget justification].docx','[Biosketch].pdf'];
+const docs = () => [
+  {name:'[Budget].xlsx', date:'[date]', tag:'No issues found'},
+  {name:'[Budget justification].docx', date:'[date]', tag:'Issue found: totals differ'},
+  {name:'[Biosketch].pdf', date:'[date]', tag:'Missing'}
+];
+const staff = [
+  {pi:'[PI name 1]', ann:'[Announcement]', status:'Needs review', source:'[NIH or other]', number:'[Number]', deadline:'[Date]', budget:'[Amount]', dept:'[Department]', docs:docs(), activity:['[Date] · [Who]: [Action]','[Date] · [Who]: [Action]']},
+  {pi:'[PI name 2]', ann:'[Announcement]', status:'Incomplete', source:'[NIH or other]', number:'[Number]', deadline:'[Date]', budget:'[Amount]', dept:'[Department]', docs:docs(), activity:['[Date] · [Who]: [Action]']},
+  {pi:'[PI name 3]', ann:'[Announcement]', status:'Approved', source:'[NIH or other]', number:'[Number]', deadline:'[Date]', budget:'[Amount]', dept:'[Department]', docs:docs(), activity:['[Date] · [Who]: [Action]']}
+];
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.id);toast.id=setTimeout(()=>t.classList.remove('show'),2200);}
+
+function makeChat(root, about, q, a){
+  root.innerHTML = `<h2>Assistant</h2><span class="tag about"></span>
+    <div class="log" role="log" aria-live="polite"><div class="msg me"></div><div class="msg bot"></div></div>
+    <form class="send"><label class="sr" for="${root.id}-in">Message</label>
+    <input class="input" id="${root.id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn primary" type="submit">Send</button></form>`;
+  const log = root.querySelector('.log');
+  log.children[0].textContent = q; log.children[1].textContent = a;
+  root.setAbout = t => root.querySelector('.about').textContent = 'About: ' + t;
+  root.setAbout(about);
+  root.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = root.querySelector('input'), v = input.value.trim();
+    if(!v) return;
+    const me = document.createElement('div'); me.className = 'msg me'; me.textContent = v; log.append(me);
+    input.value = '';
+    setTimeout(() => {
+      const bot = document.createElement('div'); bot.className = 'msg bot';
+      bot.textContent = '[Sample reply: the real assistant will answer here and cite the announcement section]';
+      log.append(bot); log.scrollTop = log.scrollHeight;
+    }, 500);
+    log.scrollTop = log.scrollHeight;
+  });
+  return root;
+}
+
+/* ---------- PI screen ---------- */
+const chatPI = makeChat($('#chat-pi'), '[Request 1]', 'What is still missing for this request?', '[Reply lists missing items and cites the announcement section]');
+$('#pi-requests').innerHTML = piRequests.map((r,i) =>
+  `<div class="row"><span><strong>${r.name}</strong><br>${r.number}</span><span class="tag">${r.status}</span><button class="btn" type="button" data-open="${i}">Open</button></div>`).join('');
+$('#pi-requests').addEventListener('click', e => {
+  const b = e.target.closest('[data-open]'); if(!b) return;
+  chatPI.setAbout('[Request ' + (+b.dataset.open + 1) + ']');
+});
+const today = new Date();
+$('#month').textContent = today.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+const todayIdx = (today.getDay() + 6) % 7;
+$('#week').innerHTML = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i) =>
+  `<span class="day${i===todayIdx?' today':''}"${i===todayIdx?' aria-current="date"':''}>${d}</span>`).join('');
+$('#deadlines').innerHTML = deadlines.map(d =>
+  `<div class="row"><span>${d.date}<br>${d.text}</span><span class="tag">${d.tag}</span></div>`).join('');
+$('#ready').innerHTML = ready.map(n =>
+  `<div class="row"><span>${n}</span><button class="btn" type="button" data-toast="Viewing documents">View</button></div>`).join('');
+
+/* ---------- staff screen ---------- */
+let sel = 0, filter = 'All';
+const chatStaff = makeChat($('#chat-staff'), '', 'Does the budget match the justification?', '[Reply cites the documents and the announcement section]');
+function renderStaff(){
+  $('#s-list').innerHTML = staff.map((r,i) => ({r,i})).filter(({r}) => filter==='All' || r.status===filter).map(({r,i}) =>
+    `<button class="btn req${i===sel?' primary':''}" type="button" data-sel="${i}"><strong>${r.pi}</strong><br><small>${r.ann} · ${r.status}</small></button>`).join('');
+  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.f===filter));
+  const r = staff[sel];
+  $('#s-title').textContent = r.pi + ': ' + r.ann;
+  $('#s-status').textContent = r.status;
+  $('#s-info').innerHTML = [['Funding source',r.source],['Announcement number',r.number],['Deadline',r.deadline],['Budget total',r.budget],['Investigator',r.pi],['Department',r.dept]]
+    .map(([k,v]) => `<div>${k}<br><strong>${v}</strong></div>`).join('');
+  $('#s-docs').innerHTML = r.docs.map(d =>
+    `<div class="row"><span>${d.name}<br><small>Submitted ${d.date}</small></span><span class="tag">${d.tag}</span><button class="btn" type="button" data-toast="Viewing documents">View</button></div>`).join('');
+  $('#s-activity').innerHTML = r.activity.map(a => `<div class="row">${a}</div>`).join('');
+  chatStaff.setAbout(r.pi + ' request');
+}
+function setStatus(s){
+  const r = staff[sel]; r.status = s;
+  r.activity.unshift(new Date().toLocaleDateString() + ' · [Staff name]: ' + s);
+  renderStaff(); toast(s + ' (sample data only)');
+}
+$('#s-list').addEventListener('click', e => { const b = e.target.closest('[data-sel]'); if(b){ sel = +b.dataset.sel; renderStaff(); } });
+$('#chips').addEventListener('click', e => { const c = e.target.closest('[data-f]'); if(c){ filter = c.dataset.f; renderStaff(); } });
+$('#s-approve').addEventListener('click', () => setStatus('Approved'));
+$('#s-changes').addEventListener('click', () => setStatus('Changes requested'));
+renderStaff();
+
+/* ---------- navigation (hash routing) ---------- */
+function route(){
+  const v = (location.hash || '#login').slice(1);
+  const name = ['pi','staff'].includes(v) ? v : 'login';
+  ['login','pi','staff'].forEach(n => $('#view-' + n).hidden = (n !== name));
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', route); route();
+document.addEventListener('click', e => {
+  const g = e.target.closest('button[data-go]'); if(g) location.hash = '#' + g.dataset.go;
+  const t = e.target.closest('[data-toast]'); if(t) toast(t.dataset.toast + ' is not connected yet (layout only)');
+});
+document.querySelectorAll('form[data-go]').forEach(f => f.addEventListener('submit', e => { e.preventDefault(); location.hash = '#' + f.dataset.go; }));
+</script>
+</body>
+</html>
