@@ -1,266 +1,281 @@
 <!doctype html>
 <!--
-  Grant Application Assistant: layout prototype (sample data only, nothing is connected).
-  Run it: double-click this file, or from this folder run `python3 -m http.server 8000`
-  and open http://localhost:8000
-  Jump straight to a screen: index.html#login, index.html#pi, index.html#staff
+  Grant Application Assistant: layout prototype v2 (sample data only, nothing is connected).
+  Run it: double-click this file, or `python3 -m http.server 8000` in this folder, then open http://localhost:8000
+  Direct links: index.html#login, #pi, #staff
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grant Application Assistant (layout prototype)</title>
+<title>Grant Application Assistant (layout prototype v2)</title>
 <style>
-:root{--bg:#F4F6F9;--ink:#1B2430;--muted:#4A5565;--line:#D5DAE1;--navy:#14284B;--blue:#1F4E8C;--chip:#6B7686;--bubble:#E9EEF6}
+:root{--bg:#F4F6F9;--ink:#1B2430;--muted:#4A5565;--line:#D5DAE1;--navy:#14284B;--blue:#1F4E8C}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
 [hidden]{display:none!important}
-h1,h2{margin:0}
-h2{font-size:15px;font-weight:600}
-small{font-size:12px}
+h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
+.sm{font-size:12px}.mut{color:var(--muted)}
 :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .sr{position:absolute;left:-9999px}
-.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
-.card h2{margin-bottom:10px}
-.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
-.card-head h2{margin:0}
-.btn{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:8px 14px;font:inherit;font-size:14px;min-height:44px;cursor:pointer}
-.btn:hover{background:#EEF3FA}
-.btn.primary{background:var(--blue);color:#fff}
-.btn.primary:hover{background:#18407A}
-.tag{display:inline-block;border:1px solid var(--chip);border-radius:20px;padding:2px 10px;font-size:12px;color:#3A4350;white-space:nowrap;background:#fff}
-.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #E6E9EE;font-size:14px}
-.input{flex:1;min-width:0;padding:10px;border:1px solid #8A94A3;border-radius:6px;font:inherit}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.btn{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:8px 14px;font:inherit;font-size:14px;min-height:40px;cursor:pointer}
+.btn:hover{background:#EEF3FA}.btn.p{background:var(--blue);color:#fff}.btn.p:hover{background:#18407A}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.tag{display:inline-block;border:1px solid #6B7686;border-radius:20px;padding:2px 10px;font-size:12px;color:#3A4350;background:#fff;white-space:nowrap}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #E6E9EE}
+.row.h{border:0;padding:0}
+.inp{flex:1;min-width:0;padding:10px;border:1px solid #8A94A3;border-radius:6px;font:inherit}
 .top{background:var(--navy);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 28px}
 .top span{display:flex;align-items:center;gap:12px}
-.layout{display:flex;gap:20px;padding:20px 28px;flex-wrap:wrap;align-items:flex-start}
-.col{display:flex;flex-direction:column;gap:20px}
-.split{display:flex;gap:20px;flex-wrap:wrap}
-.split>.card{flex:1;min-width:260px}
-/* login */
-.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px}
-.login h1{font-size:28px}
-.login p{margin:0;color:var(--muted);font-size:14px}
-.login-cards{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;width:100%;max-width:900px;margin-top:16px}
-.login-cards form{flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px}
-.login-cards h2{font-size:18px;margin:0}
-.login-cards .note{font-size:13px}
-/* chat */
-.chat{display:flex;flex-direction:column;gap:10px;min-height:560px}
-.chat h2{margin:0}
-.chat .about{align-self:flex-start}
-.log{display:flex;flex-direction:column;gap:10px;flex:1;overflow:auto}
-.msg{border-radius:8px;padding:10px;font-size:14px;max-width:85%}
-.msg.me{background:var(--bubble);align-self:flex-end}
-.msg.bot{background:var(--bg);border:1px solid var(--line)}
+.opts{background:#fff;border-bottom:1px solid var(--line);padding:8px 28px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:13px}
+.page{padding:16px 28px}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+.tab{border:0;background:none;padding:10px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;min-height:44px}
+.tab[aria-selected=true]{color:var(--blue);border-bottom-color:var(--blue)}
+.badge{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:10px;background:var(--navy);color:#fff;font-size:12px;text-align:center}
+.shell{display:flex;gap:20px;align-items:flex-start}
+.main{flex:1;min-width:0}
+.dock{width:340px;flex:none}
+.pi-wrap.lay-B{display:flex;gap:20px;align-items:flex-start}
+.lay-B .tabs{flex-direction:column;width:190px;flex:none;border-bottom:0;margin:0}
+.lay-B .tab{text-align:left;border-bottom:0;border-left:3px solid transparent;margin:0}
+.lay-B .tab[aria-selected=true]{border-left-color:var(--blue);background:#EEF3FA}
+.lay-B .dock,.lay-C .dock{display:none}
+.chat{display:flex;flex-direction:column;gap:10px;min-height:480px;margin:0}
+.log{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.msg{border-radius:8px;padding:10px;font-size:14px;max-width:88%}
+.msg.me{background:#E9EEF6;align-self:flex-end}.msg.bot{background:var(--bg);border:1px solid var(--line)}
 .send{display:flex;gap:8px}
-/* PI */
-#view-pi .main{flex:2;min-width:520px}
-#view-pi .chat{flex:1;min-width:300px;max-width:420px}
-.week{display:flex;gap:6px;font-size:12px;text-align:center;margin-bottom:8px}
-.day{flex:1;border:1px solid var(--line);border-radius:6px;padding:6px 0}
-.day.today{border:2px solid var(--blue);padding:5px 0;font-weight:600}
-/* staff */
-#view-staff .side{width:250px;min-width:230px}
-#view-staff .center{flex:2;min-width:420px}
-#view-staff .chat{flex:1;min-width:300px;max-width:380px;min-height:600px}
+.fab{position:fixed;right:20px;bottom:20px;z-index:20;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.drawer{position:fixed;right:20px;bottom:76px;width:360px;max-width:calc(100vw - 40px);z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.3)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.chip{border:1px solid var(--chip);background:#fff;border-radius:20px;padding:6px 12px;font:inherit;font-size:12px;color:#3A4350;cursor:pointer;min-height:32px}
-.chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
-.req{display:block;width:100%;text-align:left;margin-bottom:8px}
-.title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.title-row strong{font-size:18px}
-.actions{display:flex;gap:8px}
+.chip{border:1px solid #6B7686;background:#fff;border-radius:20px;padding:6px 12px;font:inherit;font-size:12px;color:#3A4350;cursor:pointer;min-height:32px}
+.chip[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dn{font-size:12px;font-weight:600;text-align:center;color:var(--muted)}
+.day{border:1px solid var(--line);border-radius:8px;padding:6px;min-height:84px;font-size:12px;background:#fff}
+.wk .day{min-height:150px}
+.day.t{border:2px solid var(--blue)}.day.o{background:var(--bg);color:#7A8493}
+.dh{font-weight:600;margin-bottom:4px}
+.dl{display:block;color:#fff;border-radius:4px;padding:1px 6px;margin-top:3px;font-size:11px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wk .dl{white-space:normal}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin:12px 0}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.cal-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.split{display:grid;grid-template-columns:minmax(240px,1fr) minmax(300px,1.4fr);gap:16px;align-items:start}
+.item{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px;margin-bottom:8px;font:inherit;cursor:pointer;color:var(--ink)}
+.item.sel{border:2px solid var(--blue);background:#EEF3FA}
+.m{border-left:3px solid var(--line);padding:2px 10px;margin:8px 0;font-size:14px}
 .info{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:14px}
-#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px}
+.login h1{font-size:28px}.login p{margin:0;color:var(--muted)}
+.lc{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;width:100%;max-width:900px;margin-top:16px}
+.lc form{flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px;margin:0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
-@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+@media (max-width:900px){.shell,.split{flex-direction:column;display:flex}.dock{width:100%}}
 </style>
 </head>
 <body>
 
-<!-- LOGIN: two separate entrances -->
 <section id="view-login" class="login">
   <h1>Grant Application Assistant</h1>
   <p>Layout prototype with sample data. Sign-in is not connected yet.</p>
-  <div class="login-cards">
-    <form class="card" data-go="pi">
-      <h2>Investigator sign in</h2>
-      <label for="pi-id">NetID</label><input class="input" id="pi-id" type="text" autocomplete="off">
-      <label for="pi-pw">Password</label><input class="input" id="pi-pw" type="password" autocomplete="off">
-      <button class="btn primary" type="submit">Sign in as investigator</button>
-      <p class="note">Opens: deadlines, request status, ready documents, assistant</p>
-    </form>
-    <form class="card" data-go="staff">
-      <h2>Staff sign in (SPS and Laura)</h2>
-      <label for="st-id">NetID</label><input class="input" id="st-id" type="text" autocomplete="off">
-      <label for="st-pw">Password</label><input class="input" id="st-pw" type="password" autocomplete="off">
-      <button class="btn primary" type="submit">Sign in as staff</button>
-      <p class="note">Opens: all requests, grant info, submitted documents, assistant</p>
-    </form>
+  <div class="lc">
+    <form class="card" data-go="pi"><h2>Investigator sign in</h2>
+      <label for="pi-id">NetID</label><input class="inp" id="pi-id" autocomplete="off">
+      <label for="pi-pw">Password</label><input class="inp" id="pi-pw" type="password" autocomplete="off">
+      <button class="btn p" type="submit">Sign in as investigator</button>
+      <p class="sm">Opens: requests, deadlines, ready documents, collaboration, assistant</p></form>
+    <form class="card" data-go="staff"><h2>Staff sign in (SPS and Laura)</h2>
+      <label for="st-id">NetID</label><input class="inp" id="st-id" autocomplete="off">
+      <label for="st-pw">Password</label><input class="inp" id="st-pw" type="password" autocomplete="off">
+      <button class="btn p" type="submit">Sign in as staff</button>
+      <p class="sm">Opens: all requests, collaboration queue, all deadlines, assistant</p></form>
   </div>
 </section>
 
-<!-- PI DASHBOARD -->
 <section id="view-pi" hidden>
   <header class="top"><strong>Grant Application Assistant</strong><span>[PI name] · Investigator <button class="btn" type="button" data-go="login">Sign out</button></span></header>
-  <main class="layout">
-    <div class="col main">
-      <div class="card">
-        <div class="card-head"><h2>Request status</h2><button class="btn primary" type="button" data-toast="New request">New request</button></div>
-        <div id="pi-requests"></div>
-      </div>
-      <div class="split">
-        <div class="card"><h2>Deadlines: <span id="month"></span></h2><div class="week" id="week"></div><div id="deadlines"></div></div>
-        <div class="card">
-          <div class="card-head"><h2>Ready to submit</h2><button class="btn" type="button" data-toast="Upload">Upload</button></div>
-          <div id="ready"></div>
-        </div>
-      </div>
-    </div>
-    <aside class="card chat" id="chat-pi"></aside>
-  </main>
+  <div class="opts"><strong>Prototype option (for feedback):</strong>
+    <label><input type="radio" name="lay" value="A" checked> A: Top tabs, chat on every tab</label>
+    <label><input type="radio" name="lay" value="B"> B: Side menu, chat on its own tab</label>
+    <label><input type="radio" name="lay" value="C"> C: Top tabs, chat button on every tab plus a chat tab</label></div>
+  <div class="page"><div class="pi-wrap lay-A" id="pi-wrap">
+    <div class="tabs" role="tablist" id="p-tabs" aria-label="Investigator sections"></div>
+    <div class="shell"><div class="main">
+      <div role="tabpanel" id="pn-req"><h2>Requests that need your attention</h2><div id="p-req"></div></div>
+      <div role="tabpanel" id="pn-dl" hidden><div class="card" id="p-cal"></div></div>
+      <div role="tabpanel" id="pn-ready" hidden><h2>Completed documents</h2><div id="p-ready"></div></div>
+      <div role="tabpanel" id="pn-col" hidden><h2>Documents that need collaboration</h2><p class="mut sm">Human subjects, animal use, subawards, and other paperwork that goes back and forth between you, SPS, and outside contributors.</p><div class="card" id="p-col"></div></div>
+      <div role="tabpanel" id="pn-chat" hidden><div id="chat-slot"></div></div>
+    </div><aside class="dock" id="dock"></aside></div>
+  </div></div>
+  <button class="btn p fab" id="fab" type="button" hidden>Ask the assistant</button>
+  <div class="drawer" id="drawer" hidden></div>
 </section>
 
-<!-- STAFF DASHBOARD (SPS and Laura) -->
 <section id="view-staff" hidden>
   <header class="top"><strong>Grant Application Assistant</strong><span>[Staff name] · SPS / Laura <button class="btn" type="button" data-go="login">Sign out</button></span></header>
-  <main class="layout">
-    <div class="card side">
-      <h2>All requests</h2>
-      <div class="chips" id="chips">
-        <button class="chip" type="button" data-f="All" aria-pressed="true">All</button>
-        <button class="chip" type="button" data-f="Needs review" aria-pressed="false">Needs review</button>
-        <button class="chip" type="button" data-f="Approved" aria-pressed="false">Approved</button>
-      </div>
-      <div id="s-list"></div>
-    </div>
-    <div class="col center">
-      <div class="card"><div class="title-row">
-        <span><strong id="s-title"></strong> <span class="tag" id="s-status"></span></span>
-        <span class="actions"><button class="btn" type="button" id="s-changes">Request changes</button><button class="btn primary" type="button" id="s-approve">Approve</button></span>
-      </div></div>
-      <div class="card"><h2>Grant info</h2><div class="info" id="s-info"></div></div>
-      <div class="card"><h2>Documents submitted</h2><div id="s-docs"></div></div>
-      <div class="card"><h2>Activity</h2><div id="s-activity"></div></div>
-    </div>
-    <aside class="card chat" id="chat-staff"></aside>
-  </main>
+  <div class="page"><div class="tabs" role="tablist" id="s-tabs" aria-label="Staff sections"></div>
+    <div id="sn-req"><div class="shell">
+      <div class="card" style="width:250px;flex:none"><h2>All requests</h2><div class="chips" id="s-chips"></div><div id="s-list"></div></div>
+      <div class="main"><div class="card"><div class="row h"><span><strong id="s-title" style="font-size:18px"></strong> <span class="tag" id="s-status"></span></span>
+        <span style="display:flex;gap:8px"><button class="btn" type="button" id="s-chg">Request changes</button><button class="btn p" type="button" id="s-ok">Approve</button></span></div></div>
+        <div class="tabs" role="tablist" id="s-inner" aria-label="Request sections"></div><div id="s-panel"></div></div>
+      <aside class="dock" id="s-chat"></aside></div></div>
+    <div id="sn-col" hidden><h2>Collaboration queue (all requests)</h2><div class="card" id="s-colall"></div></div>
+    <div id="sn-dl" hidden><div class="card" id="s-cal"></div></div>
+  </div>
 </section>
-
 <div id="toast" role="status"></div>
 
 <script>
-/* ---------- sample data (replace with real API calls later) ---------- */
-const piRequests = [
-  {name:'[Announcement name]', number:'[Announcement number]', status:'Incomplete: 3 items missing'},
-  {name:'[Announcement name]', number:'[Announcement number]', status:'In review by SPS'},
-  {name:'[Announcement name]', number:'[Announcement number]', status:'Ready to submit'}
-];
-const deadlines = [
-  {date:'[Date]', text:'[Request]: [item due]', tag:'Soon'},
-  {date:'[Date]', text:'[Request]: [item due]', tag:'Later'}
-];
-const ready = ['[Budget].xlsx','[Budget justification].docx','[Biosketch].pdf'];
-const docs = () => [
-  {name:'[Budget].xlsx', date:'[date]', tag:'No issues found'},
-  {name:'[Budget justification].docx', date:'[date]', tag:'Issue found: totals differ'},
-  {name:'[Biosketch].pdf', date:'[date]', tag:'Missing'}
-];
-const staff = [
-  {pi:'[PI name 1]', ann:'[Announcement]', status:'Needs review', source:'[NIH or other]', number:'[Number]', deadline:'[Date]', budget:'[Amount]', dept:'[Department]', docs:docs(), activity:['[Date] · [Who]: [Action]','[Date] · [Who]: [Action]']},
-  {pi:'[PI name 2]', ann:'[Announcement]', status:'Incomplete', source:'[NIH or other]', number:'[Number]', deadline:'[Date]', budget:'[Amount]', dept:'[Department]', docs:docs(), activity:['[Date] · [Who]: [Action]']},
-  {pi:'[PI name 3]', ann:'[Announcement]', status:'Approved', source:'[NIH or other]', number:'[Number]', deadline:'[Date]', budget:'[Amount]', dept:'[Department]', docs:docs(), activity:['[Date] · [Who]: [Action]']}
-];
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.i);toast.i=setTimeout(()=>t.classList.remove('show'),2200)}
+const D0=new Date(new Date().setHours(0,0,0,0));
+const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const key=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+const mon=d=>add(d,-((d.getDay()+6)%7));
+const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 
-/* ---------- helpers ---------- */
-const $ = s => document.querySelector(s);
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.id);toast.id=setTimeout(()=>t.classList.remove('show'),2200);}
+/* ---------- sample data (replace with API calls later) ---------- */
+const T={sub:['Submission','Submit','#1F4E8C'],rev:['SPS review','Review','#6B3FA0'],cmp:['Compliance (IRB/IACUC)','IRB/IACUC','#B45309'],col:['Collaborator input','Collab','#0F766E'],frm:['Forms and budget','Forms','#4B5563']};
+const mk=(a,f)=>a.map(n=>({n,done:f(n)}));
+const REQ=[
+ {id:'SAMPLE-001',pi:'[PI name 1]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Biosketch','Specific aims'],n=>n==='Biosketch'),act:['[Date] · [Who]: [Action]']},
+ {id:'SAMPLE-002',pi:'[PI name 2]',src:'Foundation',status:'In review by SPS',items:mk(['Budget','Biosketch','Research plan'],()=>true),act:['[Date] · [Who]: [Action]','[Date] · [Who]: [Action]']},
+ {id:'SAMPLE-003',pi:'[PI name 3]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Letters of support'],()=>false),act:['[Date] · [Who]: [Action]']}];
+const DL=[[1,'frm','SAMPLE-001','Budget due to SPS'],[3,'col','SAMPLE-001','External collaborator input due'],[4,'cmp','SAMPLE-001','IRB paperwork due'],[6,'rev','SAMPLE-002','SPS internal review'],[9,'sub','SAMPLE-002','Submission deadline'],[12,'cmp','SAMPLE-003','IACUC protocol due'],[16,'frm','SAMPLE-003','Forms due to SPS'],[21,'sub','SAMPLE-001','Submission deadline']].map(([o,t,r,x])=>({d:add(D0,o),t,r,x}));
+const COL=[
+ {id:1,name:'Human subjects (IRB) application',req:'SAMPLE-001',kind:'Human subjects',ver:'v3',turn:'PI',who:['PI','SPS','External: [name]'],msgs:[['SPS','[Date]','The consent form needs revised language.'],['PI','[Date]','Updated in v2, please check.'],['External','[Date]','[Collaborator comment]']]},
+ {id:2,name:'Animal use (IACUC) protocol',req:'SAMPLE-001',kind:'Animal use',ver:'v1',turn:'External',who:['PI','SPS','External: [name]'],msgs:[['PI','[Date]','Draft sent to the outside contributor.']]},
+ {id:3,name:'Subaward agreement',req:'SAMPLE-002',kind:'Subaward',ver:'v2',turn:'SPS',who:['PI','SPS','External: [institution]'],msgs:[['External','[Date]','[Signed copy attached]']]}];
 
-function makeChat(root, about, q, a){
-  root.innerHTML = `<h2>Assistant</h2><span class="tag about"></span>
-    <div class="log" role="log" aria-live="polite"><div class="msg me"></div><div class="msg bot"></div></div>
-    <form class="send"><label class="sr" for="${root.id}-in">Message</label>
-    <input class="input" id="${root.id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn primary" type="submit">Send</button></form>`;
-  const log = root.querySelector('.log');
-  log.children[0].textContent = q; log.children[1].textContent = a;
-  root.setAbout = t => root.querySelector('.about').textContent = 'About: ' + t;
-  root.setAbout(about);
-  root.querySelector('form').addEventListener('submit', e => {
-    e.preventDefault();
-    const input = root.querySelector('input'), v = input.value.trim();
-    if(!v) return;
-    const me = document.createElement('div'); me.className = 'msg me'; me.textContent = v; log.append(me);
-    input.value = '';
-    setTimeout(() => {
-      const bot = document.createElement('div'); bot.className = 'msg bot';
-      bot.textContent = '[Sample reply: the real assistant will answer here and cite the announcement section]';
-      log.append(bot); log.scrollTop = log.scrollHeight;
-    }, 500);
-    log.scrollTop = log.scrollHeight;
-  });
-  return root;
+/* ---------- tabs ---------- */
+function drawTabs(list,items,cur,on){
+  list.innerHTML=items.map(([id,l,b])=>`<button class="tab" role="tab" aria-selected="${id===cur}" tabindex="${id===cur?0:-1}" data-id="${id}">${l}${b!=null?`<span class="badge">${b}</span>`:''}</button>`).join('');
+  list.onclick=e=>{const b=e.target.closest('.tab');if(b){on(b.dataset.id);$('.tab[aria-selected=true]',list).focus()}};
+  list.onkeydown=e=>{if(!/^Arrow(Left|Right|Up|Down)$/.test(e.key))return;e.preventDefault();const t=$$('.tab',list),i=t.indexOf(document.activeElement);if(i<0)return;const n=t[(i+(/Right|Down/.test(e.key)?1:-1)+t.length)%t.length];on(n.dataset.id);$('.tab[aria-selected=true]',list).focus()};
 }
 
-/* ---------- PI screen ---------- */
-const chatPI = makeChat($('#chat-pi'), '[Request 1]', 'What is still missing for this request?', '[Reply lists missing items and cites the announcement section]');
-$('#pi-requests').innerHTML = piRequests.map((r,i) =>
-  `<div class="row"><span><strong>${r.name}</strong><br>${r.number}</span><span class="tag">${r.status}</span><button class="btn" type="button" data-open="${i}">Open</button></div>`).join('');
-$('#pi-requests').addEventListener('click', e => {
-  const b = e.target.closest('[data-open]'); if(!b) return;
-  chatPI.setAbout('[Request ' + (+b.dataset.open + 1) + ']');
-});
-const today = new Date();
-$('#month').textContent = today.toLocaleDateString('en-US', {month:'long', year:'numeric'});
-const todayIdx = (today.getDay() + 6) % 7;
-$('#week').innerHTML = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i) =>
-  `<span class="day${i===todayIdx?' today':''}"${i===todayIdx?' aria-current="date"':''}>${d}</span>`).join('');
-$('#deadlines').innerHTML = deadlines.map(d =>
-  `<div class="row"><span>${d.date}<br>${d.text}</span><span class="tag">${d.tag}</span></div>`).join('');
-$('#ready').innerHTML = ready.map(n =>
-  `<div class="row"><span>${n}</span><button class="btn" type="button" data-toast="Viewing documents">View</button></div>`).join('');
+/* ---------- chat (one component, placed differently per layout) ---------- */
+function makeChat(id,q,a){
+  const r=document.createElement('aside');r.id=id;r.className='card chat';
+  r.innerHTML=`<h2 style="margin:0">Assistant</h2><span class="tag about" style="align-self:flex-start"></span><div class="log" role="log" aria-live="polite"><div class="msg me"></div><div class="msg bot"></div></div><form class="send"><label class="sr" for="${id}-in">Message</label><input class="inp" id="${id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn p" type="submit">Send</button></form>`;
+  const log=$('.log',r);log.children[0].textContent=q;log.children[1].textContent=a;
+  r.setAbout=t=>$('.about',r).textContent='About: '+t;
+  $('form',r).onsubmit=e=>{e.preventDefault();const i=$('input',r),v=i.value.trim();if(!v)return;const m=document.createElement('div');m.className='msg me';m.textContent=v;log.append(m);i.value='';
+    setTimeout(()=>{const b=document.createElement('div');b.className='msg bot';b.textContent='[Sample reply: the real assistant will answer here and cite the announcement section]';log.append(b);log.scrollTop=log.scrollHeight},500);log.scrollTop=log.scrollHeight};
+  return r;
+}
 
-/* ---------- staff screen ---------- */
-let sel = 0, filter = 'All';
-const chatStaff = makeChat($('#chat-staff'), '', 'Does the budget match the justification?', '[Reply cites the documents and the announcement section]');
+/* ---------- calendar (week or month, color-coded by deadline type) ---------- */
+function cal(root,reqId){
+  const st=root._s||(root._s={v:'week',o:0});
+  const list=DL.filter(x=>!reqId||x.r===reqId),by={};list.forEach(x=>(by[key(x.d)]=by[key(x.d)]||[]).push(x));
+  let days,title,mo;
+  if(st.v==='week'){const s=add(mon(D0),st.o*7);days=[...Array(7)].map((_,i)=>add(s,i));title='Week of '+fmt(s)}
+  else{const m=new Date(D0.getFullYear(),D0.getMonth()+st.o,1);mo=m.getMonth();const n=Math.ceil((((m.getDay()+6)%7)+new Date(m.getFullYear(),mo+1,0).getDate())/7)*7;days=[...Array(n)].map((_,i)=>add(mon(m),i));title=m.toLocaleDateString('en-US',{month:'long',year:'numeric'})}
+  const wk=st.v==='week',lim=wk?9:2;
+  const chip=x=>`<span class="dl" style="background:${T[x.t][2]}" title="${x.r}: ${x.x}">${wk?`${T[x.t][1]}: ${x.r}<br>${x.x}`:`${T[x.t][1]} ${x.r.slice(-3)}`}</span>`;
+  const up=list.filter(x=>x.d>=D0).sort((a,b)=>a.d-b.d).slice(0,6);
+  root.innerHTML=`<div class="cal-h"><span role="group" aria-label="View"><button class="chip" data-v="week" aria-pressed="${wk}">Week</button> <button class="chip" data-v="month" aria-pressed="${!wk}">Month</button></span>
+   <button class="btn" data-n="-1" aria-label="Previous">&lsaquo;</button><button class="btn" data-n="0">Today</button><button class="btn" data-n="1" aria-label="Next">&rsaquo;</button><strong>${title}</strong></div>
+   <div class="grid7 ${wk?'wk':''}">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="dn">${d}</div>`).join('')}${days.map(d=>{const L=by[key(d)]||[];return `<div class="day${key(d)===key(D0)?' t':''}${!wk&&d.getMonth()!==mo?' o':''}"><div class="dh">${d.getDate()}</div>${L.slice(0,lim).map(chip).join('')}${L.length>lim?`<span class="sm">+${L.length-lim} more</span>`:''}</div>`}).join('')}</div>
+   <div class="legend">${Object.values(T).map(t=>`<span><span class="sw" style="background:${t[2]}"></span>${t[0]}</span>`).join('')}</div>
+   <h3>Coming up</h3>${up.map(x=>`<div class="row"><span><span class="sw" style="background:${T[x.t][2]}"></span><strong>${fmt(x.d)}</strong> · ${T[x.t][0]}<br><span class="sm">${x.r}: ${x.x}</span></span></div>`).join('')}`;
+  root.onclick=e=>{const v=e.target.closest('[data-v]'),n=e.target.closest('[data-n]');if(v){st.v=v.dataset.v;st.o=0;cal(root,reqId)}if(n){st.o=n.dataset.n==='0'?0:st.o+ +n.dataset.n;cal(root,reqId)}};
+}
+
+/* ---------- collaboration (back and forth between PI, SPS, and outside contributors) ---------- */
+function collab(root,role,reqId,after){
+  const st=root._s||(root._s={f:'all',sel:null}),mine=c=>c.turn===role;
+  const list=COL.filter(c=>!reqId||c.req===reqId).filter(c=>st.f==='all'||(st.f==='me'?mine(c):!mine(c)));
+  const c0=list.find(c=>c.id===st.sel)||list[0];st.sel=c0&&c0.id;
+  root.innerHTML=`<div class="chips">${[['all','All'],['me','Needs my action'],['oth','Waiting on others']].map(([v,l])=>`<button class="chip" data-f="${v}" aria-pressed="${st.f===v}">${l}</button>`).join('')}</div>
+   <div class="split"><div>${list.map(c=>`<button class="item${c===c0?' sel':''}" data-id="${c.id}"><strong>${c.name}</strong><br><span class="sm mut">${c.req} · ${c.kind} · ${c.ver}</span><br><span class="tag">${mine(c)?'Needs your response':'Waiting on '+c.turn}</span></button>`).join('')||'<p class="mut">Nothing here.</p>'}</div>
+   <div class="card" style="margin:0">${c0?`<h3>${c0.name}</h3><p class="sm mut">Participants: ${c0.who.join(', ')} · Whose turn: ${c0.turn}</p>${c0.msgs.map(m=>`<div class="m"><span class="tag">${m[0]}</span> <span class="sm mut">${m[1]}</span><br>${esc(m[2])}</div>`).join('')}
+   <form class="send" style="margin:10px 0"><label class="sr" for="rp-${c0.id}">Reply</label><input class="inp" id="rp-${c0.id}" placeholder="Write a reply" autocomplete="off"><button class="btn p" type="submit">Reply</button></form>
+   <button type="button" class="btn" data-toast="Upload a new version">Upload new version</button> <button type="button" class="btn" data-toast="Invite an outside contributor">Invite contributor</button>`:'<p class="mut">Select a document.</p>'}</div></div>`;
+  root.onclick=e=>{const f=e.target.closest('[data-f]'),i=e.target.closest('.item');if(f){st.f=f.dataset.f;collab(root,role,reqId,after)}else if(i){st.sel=+i.dataset.id;collab(root,role,reqId,after)}};
+  const form=$('form',root);if(form)form.onsubmit=e=>{e.preventDefault();const v=$('input',form).value.trim();if(!v)return;c0.msgs.push([role==='PI'?'PI':'SPS','Today',v]);c0.turn=role==='PI'?'SPS':'PI';collab(root,role,reqId,after);after&&after()};
+}
+
+/* ---------- PI page ---------- */
+const pi={tab:'req',lay:'A',open:false};
+const piChat=makeChat('chat-pi','What is still missing for SAMPLE-001?','[Reply lists missing items and cites the announcement section]');
+const left=()=>REQ.reduce((a,r)=>a+r.items.filter(i=>!i.done).length,0);
+const doneN=()=>REQ.reduce((a,r)=>a+r.items.filter(i=>i.done).length,0);
+const myCol=role=>COL.filter(c=>c.turn===role).length;
+function renderReq(){
+  $('#p-req').innerHTML=REQ.map(r=>{const rest=r.items.filter(i=>!i.done);return `<div class="card"><div class="row h"><div><h3>${r.id}</h3><span class="sm mut">${r.src} · ${r.items.length-rest.length} of ${r.items.length} complete</span></div><span class="tag">${r.status}</span></div>
+   <div class="sm mut" style="margin:10px 0 2px">${rest.length?'Requirements left to complete':'All requirements complete: see Ready to submit'}</div>
+   ${rest.map(i=>`<label class="row"><span>${i.n}</span><span class="sm"><input type="checkbox" data-r="${r.id}" data-n="${i.n}"> Mark completed</span></label>`).join('')}</div>`}).join('');
+}
+function renderReady(){
+  $('#p-ready').innerHTML=REQ.map(r=>{const d=r.items.filter(i=>i.done),all=d.length===r.items.length&&['Incomplete','Changes requested'].includes(r.status);
+   return `<div class="card"><div class="row h"><h3>${r.id}</h3><button class="btn p" data-send="${r.id}" ${all?'':'disabled'}>Send to SPS for review</button></div>
+   ${d.length?d.map(i=>`<div class="row"><span>${i.n}</span><span><button class="btn" data-toast="Viewing documents">View</button> <button class="btn" data-back="${r.id}|${i.n}">Move back</button></span></div>`).join(''):'<p class="mut sm">No completed documents yet. Mark them completed on the Requests tab.</p>'}</div>`}).join('')+'<button class="btn" data-toast="Upload">Upload a document</button>';
+}
+function drawPI(focus){
+  const items=[['req','Requests',left()],['dl','Deadlines'],['ready','Ready to submit',doneN()],['col','Collaboration',myCol('PI')]];
+  if(pi.lay!=='A')items.push(['chat','Assistant']);
+  if(pi.tab==='chat'&&pi.lay==='A')pi.tab='req';
+  drawTabs($('#p-tabs'),items,pi.tab,id=>{pi.tab=id;drawPI()});
+  ['req','dl','ready','col','chat'].forEach(id=>$('#pn-'+id).hidden=id!==pi.tab);
+  $('#pi-wrap').className='pi-wrap lay-'+pi.lay;
+  const inDrawer=pi.lay==='C'&&pi.open&&pi.tab!=='chat';
+  (pi.lay==='A'?$('#dock'):inDrawer?$('#drawer'):$('#chat-slot')).append(piChat);
+  $('#drawer').hidden=!inDrawer;$('#fab').hidden=!(pi.lay==='C'&&pi.tab!=='chat');
+  $('#fab').textContent=pi.open?'Close assistant':'Ask the assistant';
+  piChat.setAbout((items.find(i=>i[0]===pi.tab)||[])[1]||'');
+  if(focus)$('.tab[aria-selected=true]',$('#p-tabs')).focus();
+}
+function refreshPI(){renderReq();renderReady();drawPI()}
+$('#p-req').onchange=e=>{const c=e.target.closest('[data-r]');if(!c)return;REQ.find(r=>r.id===c.dataset.r).items.find(i=>i.n===c.dataset.n).done=true;refreshPI();syncStaff();toast('Moved to Ready to submit')};
+$('#p-ready').onclick=e=>{const s=e.target.closest('[data-send]'),b=e.target.closest('[data-back]');
+  if(s){REQ.find(r=>r.id===s.dataset.send).status='In review by SPS';refreshPI();syncStaff();toast('Sent to SPS (sample data only)')}
+  if(b){const[id,n]=b.dataset.back.split('|');REQ.find(r=>r.id===id).items.find(i=>i.n===n).done=false;refreshPI();syncStaff()}};
+$$('input[name=lay]').forEach(r=>r.onchange=()=>{pi.lay=r.value;pi.open=false;drawPI()});
+$('#fab').onclick=()=>{pi.open=!pi.open;drawPI()};
+addEventListener('keydown',e=>{if(e.key==='Escape'&&pi.open){pi.open=false;drawPI()}});
+const piCol=()=>collab($('#p-col'),'PI',null,()=>drawPI());
+renderReq();renderReady();cal($('#p-cal'));piCol();drawPI();
+
+/* ---------- Staff page (SPS and Laura) ---------- */
+const st={top:'req',inner:'ov',sel:0,filt:'All'};
+const sChat=makeChat('chat-staff','Does the budget match the justification?','[Reply cites the documents and the announcement section]');
+$('#s-chat').append(sChat);
 function renderStaff(){
-  $('#s-list').innerHTML = staff.map((r,i) => ({r,i})).filter(({r}) => filter==='All' || r.status===filter).map(({r,i}) =>
-    `<button class="btn req${i===sel?' primary':''}" type="button" data-sel="${i}"><strong>${r.pi}</strong><br><small>${r.ann} · ${r.status}</small></button>`).join('');
-  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.f===filter));
-  const r = staff[sel];
-  $('#s-title').textContent = r.pi + ': ' + r.ann;
-  $('#s-status').textContent = r.status;
-  $('#s-info').innerHTML = [['Funding source',r.source],['Announcement number',r.number],['Deadline',r.deadline],['Budget total',r.budget],['Investigator',r.pi],['Department',r.dept]]
-    .map(([k,v]) => `<div>${k}<br><strong>${v}</strong></div>`).join('');
-  $('#s-docs').innerHTML = r.docs.map(d =>
-    `<div class="row"><span>${d.name}<br><small>Submitted ${d.date}</small></span><span class="tag">${d.tag}</span><button class="btn" type="button" data-toast="Viewing documents">View</button></div>`).join('');
-  $('#s-activity').innerHTML = r.activity.map(a => `<div class="row">${a}</div>`).join('');
-  chatStaff.setAbout(r.pi + ' request');
+  const stats=['All',...new Set(REQ.map(r=>r.status))];
+  $('#s-chips').innerHTML=stats.map(s=>`<button class="chip" data-s="${s}" aria-pressed="${st.filt===s}">${s}</button>`).join('');
+  $('#s-list').innerHTML=REQ.map((r,i)=>({r,i})).filter(({r})=>st.filt==='All'||r.status===st.filt).map(({r,i})=>`<button class="item${i===st.sel?' sel':''}" data-i="${i}"><strong>${r.id}</strong><br><span class="sm mut">${r.pi}</span><br><span class="tag">${r.status}</span></button>`).join('');
+  const r=REQ[st.sel];$('#s-title').textContent=r.id+' · '+r.pi;$('#s-status').textContent=r.status;
+  drawTabs($('#s-inner'),[['ov','Overview'],['docs','Documents',r.items.filter(i=>!i.done).length||null],['col','Collaboration',COL.filter(c=>c.req===r.id&&c.turn==='SPS').length||null],['act','Activity']],st.inner,id=>{st.inner=id;renderStaff()});
+  const p=$('#s-panel'),nxt=DL.filter(x=>x.r===r.id&&x.t==='sub')[0];
+  if(st.inner==='ov')p.innerHTML=`<div class="card"><h2>Grant info</h2><div class="info"><div>Announcement number<br><strong>${r.id}</strong></div><div>Funding source<br><strong>${r.src}</strong></div><div>Investigator<br><strong>${r.pi}</strong></div><div>Department<br><strong>[Department]</strong></div><div>Submission deadline<br><strong>${nxt?fmt(nxt.d):'[Date]'}</strong></div><div>Budget total<br><strong>[Amount]</strong></div></div><p class="sm mut" style="margin:12px 0 0">${r.items.filter(i=>i.done).length} of ${r.items.length} requirements submitted</p></div>`;
+  if(st.inner==='docs')p.innerHTML=`<div class="card"><h2>Documents</h2>${r.items.map(i=>`<div class="row"><span>${i.n}<br><span class="sm mut">${i.done?'Submitted [date]':'Not yet submitted'}</span></span><span class="tag">${i.done?'Submitted':'Missing'}</span><button class="btn" data-toast="Viewing documents">View</button></div>`).join('')}</div>`;
+  if(st.inner==='col'){p.innerHTML='<div class="card" id="s-col1"></div>';collab($('#s-col1'),'SPS',r.id,renderStaff)}
+  if(st.inner==='act')p.innerHTML=`<div class="card"><h2>Activity</h2>${r.act.map(a=>`<div class="row">${esc(a)}</div>`).join('')}</div>`;
+  sChat.setAbout(r.id+' ('+r.pi+')');
+  drawTabs($('#s-tabs'),[['req','Requests',REQ.filter(x=>x.status==='In review by SPS').length],['col','Collaboration',myCol('SPS')],['dl','Deadlines']],st.top,id=>{st.top=id;renderStaff()});
+  ['req','col','dl'].forEach(id=>$('#sn-'+id).hidden=id!==st.top);
 }
-function setStatus(s){
-  const r = staff[sel]; r.status = s;
-  r.activity.unshift(new Date().toLocaleDateString() + ' · [Staff name]: ' + s);
-  renderStaff(); toast(s + ' (sample data only)');
-}
-$('#s-list').addEventListener('click', e => { const b = e.target.closest('[data-sel]'); if(b){ sel = +b.dataset.sel; renderStaff(); } });
-$('#chips').addEventListener('click', e => { const c = e.target.closest('[data-f]'); if(c){ filter = c.dataset.f; renderStaff(); } });
-$('#s-approve').addEventListener('click', () => setStatus('Approved'));
-$('#s-changes').addEventListener('click', () => setStatus('Changes requested'));
-renderStaff();
+function syncStaff(){renderStaff();collab($('#s-colall'),'SPS',null,renderStaff)}
+$('#s-chips').onclick=e=>{const c=e.target.closest('[data-s]');if(c){st.filt=c.dataset.s;renderStaff()}};
+$('#s-list').onclick=e=>{const b=e.target.closest('[data-i]');if(b){st.sel=+b.dataset.i;renderStaff()}};
+function setStatus(s){const r=REQ[st.sel];r.status=s;r.act.unshift(new Date().toLocaleDateString()+' · [Staff name]: '+s);syncStaff();refreshPI();toast(s+' (sample data only)')}
+$('#s-ok').onclick=()=>setStatus('Approved');$('#s-chg').onclick=()=>setStatus('Changes requested');
+cal($('#s-cal'));syncStaff();
 
-/* ---------- navigation (hash routing) ---------- */
-function route(){
-  const v = (location.hash || '#login').slice(1);
-  const name = ['pi','staff'].includes(v) ? v : 'login';
-  ['login','pi','staff'].forEach(n => $('#view-' + n).hidden = (n !== name));
-  window.scrollTo(0, 0);
-}
-addEventListener('hashchange', route); route();
-document.addEventListener('click', e => {
-  const g = e.target.closest('button[data-go]'); if(g) location.hash = '#' + g.dataset.go;
-  const t = e.target.closest('[data-toast]'); if(t) toast(t.dataset.toast + ' is not connected yet (layout only)');
-});
-document.querySelectorAll('form[data-go]').forEach(f => f.addEventListener('submit', e => { e.preventDefault(); location.hash = '#' + f.dataset.go; }));
+/* ---------- navigation ---------- */
+function route(){const v=(location.hash||'#login').slice(1),n=['pi','staff'].includes(v)?v:'login';['login','pi','staff'].forEach(x=>$('#view-'+x).hidden=x!==n);scrollTo(0,0)}
+addEventListener('hashchange',route);route();
+document.addEventListener('click',e=>{const g=e.target.closest('button[data-go]');if(g)location.hash='#'+g.dataset.go;const t=e.target.closest('[data-toast]');if(t)toast(t.dataset.toast+' is not connected yet (layout only)')});
+$$('form[data-go]').forEach(f=>f.onsubmit=e=>{e.preventDefault();location.hash='#'+f.dataset.go});
 </script>
 </body>
 </html>
