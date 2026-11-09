@@ -1,0 +1,13 @@
+APPLICATION PACKAGE SUMMARY (fake test data)
+
+Primary Applicant: Dr. John Sampleman, registered 2026 Annual Meeting participant
+Organization: Example State University (academic institution)
+Project type: Individual pilot project
+
+Documents included:
+- Cover sheet: 1 page
+- Proposal: 3 pages, Calibri 10-point font, 0.5 inch margins, single spaced, PDF file, 2.1 MB
+
+Requested funding: $150,000 plus indirect costs
+Grant term: 24 months
+Submission date: July 10, 2026

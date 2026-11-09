@@ -1,0 +1,13 @@
+APPLICATION PACKAGE SUMMARY (fake test data)
+
+Primary Applicant: Dr. Jane Testperson, registered 2026 Annual Meeting participant
+Organization: Example State University (academic institution)
+Project type: Individual pilot project
+
+Documents included:
+- Proposal: 2 pages, Arial 11-point font, 1 inch margins, single spaced, PDF file, 1.2 MB, no cover sheet
+- Budget table and narrative: 1 page, on the provided template
+
+Requested funding: $95,000 total, including indirect costs
+Grant term: 18 months
+Submission date: July 1, 2026
