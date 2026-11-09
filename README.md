@@ -1,7 +1,10 @@
 # ai-grant-project (with the AI Judge)
 
+**New here? Read [START_HERE.md](START_HERE.md)** to run it on your own PC in a few steps.
+
 The dashboard's Assistant chat talks to an AI Judge, which hands questions to specialist agents.
-Each agent runs its own local LLM (Ollama), and specialists can read MongoDB (read-only).
+Each agent uses the model set in agents.json (Claude by default, or a local Ollama model), and
+specialists can read MongoDB (read-only).
 
 ## The files
 
