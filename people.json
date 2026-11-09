@@ -1,0 +1,15 @@
+{
+  "_note": "SAMPLE DATA ONLY: made-up people for the demo. The assistant looks people up here when building a grant team. Replace with the real directory later. Emails are fake (example.org).",
+  "people": [
+    { "id": "P001", "name": "Dr. Maria Alvarez", "title": "Associate Professor", "department": "Oral Health and Diagnostic Sciences", "institution": "UConn Health", "email": "malvarez@example.org", "can_be_pi": true },
+    { "id": "P002", "name": "Dr. James Chen", "title": "Professor", "department": "Pediatric Dentistry", "institution": "UConn Health", "email": "jchen@example.org", "can_be_pi": true },
+    { "id": "P003", "name": "Dr. Priya Natarajan", "title": "Assistant Professor", "department": "Reconstructive Sciences", "institution": "UConn Health", "email": "pnatarajan@example.org", "can_be_pi": true },
+    { "id": "P004", "name": "Dr. Samuel Okafor", "title": "Research Scientist", "department": "Craniofacial Sciences", "institution": "UConn Health", "email": "sokafor@example.org", "can_be_pi": false },
+    { "id": "P005", "name": "Dr. Elena Rossi", "title": "Biostatistician", "department": "Biostatistics Center", "institution": "UConn Health", "email": "erossi@example.org", "can_be_pi": false },
+    { "id": "P006", "name": "Dr. Kevin Murphy", "title": "Associate Professor", "department": "Periodontology", "institution": "UConn Health", "email": "kmurphy@example.org", "can_be_pi": true },
+    { "id": "P007", "name": "Dr. Hannah Lee", "title": "Postdoctoral Fellow", "department": "Pediatric Dentistry", "institution": "UConn Health", "email": "hlee@example.org", "can_be_pi": false },
+    { "id": "P008", "name": "Dr. Aisha Rahman", "title": "Professor of Public Health", "department": "Epidemiology", "institution": "Partner University (external)", "email": "arahman@example.org", "can_be_pi": false },
+    { "id": "P009", "name": "Dr. Tomas Herrera", "title": "Animal Facility Director", "department": "Comparative Medicine", "institution": "Partner Research Institute (external)", "email": "therrera@example.org", "can_be_pi": false },
+    { "id": "P010", "name": "Jordan Ellis", "title": "Grants Specialist", "department": "Sponsored Programs Services (SPS)", "institution": "UConn Health", "email": "jellis@example.org", "can_be_pi": false }
+  ]
+}

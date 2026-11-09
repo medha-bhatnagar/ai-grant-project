@@ -1,8 +1,33 @@
+# The whole system on the VM, three containers. See README.md for the commands.
+# dashboard and judge share the VM's network so the Judge reaches the VM's MongoDB at
+# localhost (like mongosh does). Everything listens on 127.0.0.1: use an SSH tunnel.
 services:
+  # Web UI on http://localhost:8080. Its Assistant chat calls /api/chat -> the judge.
   dashboard:
+    build: ./dashboard
+    network_mode: host
+    depends_on: [judge]
+    restart: unless-stopped
+
+  # The Judge and specialists defined in agents.json.
+  judge:
     build:
-      context: ./dashboard
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: judge/Dockerfile
+    network_mode: host
+    environment:
+      MONGO_URL: ${MONGO_URL:-}               # optional: a database address with a password
+    volumes:
+      - ./agents.json:/app/agents.json:ro     # edit agents.json without rebuilding
+    depends_on: [llm]
+    restart: unless-stopped
+
+  # The LLMs (Ollama). Download the models named in agents.json with:
+  #   docker compose exec judge python judge.py pull
+  llm:
+    image: ollama/ollama:latest
     ports:
-      - "8080:80"
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ./data/ollama:/root/.ollama
     restart: unless-stopped

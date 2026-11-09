@@ -42,8 +42,12 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
 .lay-B .tab{text-align:left;border-bottom:0;border-left:3px solid transparent;margin:0}
 .lay-B .tab[aria-selected=true]{border-left-color:var(--blue);background:#EEF3FA}
 .lay-B .dock,.lay-C .dock{display:none}
-.chat{display:flex;flex-direction:column;gap:10px;min-height:480px;margin:0}
-.log{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.chat{display:flex;flex-direction:column;gap:10px;height:calc(100vh - 150px);min-height:420px;margin:0}
+.drawer .chat{height:min(560px,calc(100vh - 120px))}
+.dock{position:sticky;top:12px;align-self:flex-start}
+.log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
+.msg p{margin:0 0 6px}.msg p:last-child{margin-bottom:0}
+.msg ul{margin:4px 0 6px;padding-left:18px}.msg li{margin:3px 0}
 .msg{border-radius:8px;padding:10px;font-size:14px;max-width:88%}
 .msg.me{background:#E9EEF6;align-self:flex-end}.msg.bot{background:var(--bg);border:1px solid var(--line)}
 .send{display:flex;gap:8px}
@@ -108,7 +112,7 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
       <div role="tabpanel" id="pn-req"><h2>Requests that need your attention</h2><div id="p-req"></div></div>
       <div role="tabpanel" id="pn-dl" hidden><div class="card" id="p-cal"></div></div>
       <div role="tabpanel" id="pn-ready" hidden><h2>Completed documents</h2><div id="p-ready"></div></div>
-      <div role="tabpanel" id="pn-col" hidden><h2>Documents that need collaboration</h2><p class="mut sm">Human subjects, animal use, subawards, and other paperwork that goes back and forth between you, SPS, and outside contributors.</p><div class="card" id="p-col"></div></div>
+      <div role="tabpanel" id="pn-col" hidden><h2>Grant teams</h2><p class="mut sm">PIs, investigators and collaborators on each request. Ask the assistant to add someone.</p><div class="card" id="p-team"></div><h2>Documents that need collaboration</h2><p class="mut sm">Human subjects, animal use, subawards, and other paperwork that goes back and forth between you, SPS, and outside contributors.</p><div class="card" id="p-col"></div></div>
       <div role="tabpanel" id="pn-chat" hidden><div id="chat-slot"></div></div>
     </div><aside class="dock" id="dock"></aside></div>
   </div></div>
@@ -125,7 +129,7 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
         <span style="display:flex;gap:8px"><button class="btn" type="button" id="s-chg">Request changes</button><button class="btn p" type="button" id="s-ok">Approve</button></span></div></div>
         <div class="tabs" role="tablist" id="s-inner" aria-label="Request sections"></div><div id="s-panel"></div></div>
       <aside class="dock" id="s-chat"></aside></div></div>
-    <div id="sn-col" hidden><h2>Collaboration queue (all requests)</h2><div class="card" id="s-colall"></div></div>
+    <div id="sn-col" hidden><h2>Grant teams</h2><div class="card" id="s-team"></div><h2>Collaboration queue (all requests)</h2><div class="card" id="s-colall"></div></div>
     <div id="sn-dl" hidden><div class="card" id="s-cal"></div></div>
   </div>
 </section>
@@ -147,7 +151,9 @@ const mk=(a,f)=>a.map(n=>({n,done:f(n)}));
 const REQ=[
  {id:'SAMPLE-001',pi:'[PI name 1]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Biosketch','Specific aims'],n=>n==='Biosketch'),act:['[Date] · [Who]: [Action]']},
  {id:'SAMPLE-002',pi:'[PI name 2]',src:'Foundation',status:'In review by SPS',items:mk(['Budget','Biosketch','Research plan'],()=>true),act:['[Date] · [Who]: [Action]','[Date] · [Who]: [Action]']},
- {id:'SAMPLE-003',pi:'[PI name 3]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Letters of support'],()=>false),act:['[Date] · [Who]: [Action]']}];
+ {id:'SAMPLE-003',pi:'[PI name 3]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Letters of support'],()=>false),act:['[Date] · [Who]: [Action]']},
+ {id:'SAMPLE-004',pi:'[PI name 4]',src:'NIH',status:'Ready for SPS review',items:mk(['Specific aims','Research strategy','Budget','Budget justification','Biosketch','Letters of support'],()=>true),act:['Good sample: good_grant.docx']},
+ {id:'SAMPLE-005',pi:'[PI name 5]',src:'NIH',status:'Incomplete',items:mk(['Specific aims','Research strategy','Budget','Budget justification','Biosketch'],n=>['Specific aims','Budget','Budget justification'].includes(n)),act:['Bad sample: bad_grant.docx']}];
 const DL=[[1,'frm','SAMPLE-001','Budget due to SPS'],[3,'col','SAMPLE-001','External collaborator input due'],[4,'cmp','SAMPLE-001','IRB paperwork due'],[6,'rev','SAMPLE-002','SPS internal review'],[9,'sub','SAMPLE-002','Submission deadline'],[12,'cmp','SAMPLE-003','IACUC protocol due'],[16,'frm','SAMPLE-003','Forms due to SPS'],[21,'sub','SAMPLE-001','Submission deadline']].map(([o,t,r,x])=>({d:add(D0,o),t,r,x}));
 const COL=[
  {id:1,name:'Human subjects (IRB) application',req:'SAMPLE-001',kind:'Human subjects',ver:'v3',turn:'PI',who:['PI','SPS','External: [name]'],msgs:[['SPS','[Date]','The consent form needs revised language.'],['PI','[Date]','Updated in v2, please check.'],['External','[Date]','[Collaborator comment]']]},
@@ -161,14 +167,54 @@ function drawTabs(list,items,cur,on){
   list.onkeydown=e=>{if(!/^Arrow(Left|Right|Up|Down)$/.test(e.key))return;e.preventDefault();const t=$$('.tab',list),i=t.indexOf(document.activeElement);if(i<0)return;const n=t[(i+(/Right|Down/.test(e.key)?1:-1)+t.length)%t.length];on(n.dataset.id);$('.tab[aria-selected=true]',list).focus()};
 }
 
-/* ---------- chat (one component, placed differently per layout) ---------- */
-function makeChat(id,q,a){
+/* ---------- grant teams (from the database, via /api/team) ---------- */
+async function refreshTeams(){
+  const roots=['#p-team','#s-team'].map(s=>$(s)).filter(Boolean);
+  let team;
+  try{const r=await fetch('/api/team');team=(await r.json()).team||[]}
+  catch(e){roots.forEach(r=>r.innerHTML='<p class="mut sm">Team list unavailable (is the app running?).</p>');return}
+  const order={'PI':0,'Co-Investigator':1,'Collaborator':2},by={};
+  team.forEach(m=>(by[m.request_id]=by[m.request_id]||[]).push(m));
+  const html=Object.keys(by).sort().map(id=>`<h3 style="margin:8px 0 4px">${esc(id)}</h3>`+
+    by[id].sort((a,b)=>order[a.role]-order[b.role]).map(m=>`<div class="row"><span><span class="tag">${esc(m.role)}</span> <strong>${esc(m.name)}</strong><br>
+     <span class="sm mut">${esc(m.title)} · ${esc(m.department)} · ${esc(m.institution)} · ${esc(m.email)}${m.invited_by?' · invited by '+esc(m.invited_by):''}</span></span></div>`).join('')).join('')
+    ||'<p class="mut sm">No teams yet. Ask the assistant to set one up.</p>';
+  roots.forEach(r=>r.innerHTML=html);
+}
+
+/* Turns the assistant's simple Markdown (bold, bullets, numbered lists) into safe HTML. */
+function md(text){
+  const blocks=[];let list=null;
+  for(const raw of esc(text).split('\n')){
+    const line=raw.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^#+\s*/,'');
+    const item=line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)/);
+    if(item){if(!list){list=[];blocks.push(list)}list.push(item[1])}
+    else{list=null;if(line.trim())blocks.push(line)}
+  }
+  return blocks.map(b=>Array.isArray(b)?'<ul>'+b.map(i=>'<li>'+i+'</li>').join('')+'</ul>':'<p>'+b+'</p>').join('');
+}
+
+/* ---------- chat (one component, placed differently per layout) ----------
+   Sends each message to the AI Judge (POST /api/chat) with what the user is looking at. */
+function makeChat(id,greeting){
   const r=document.createElement('aside');r.id=id;r.className='card chat';
-  r.innerHTML=`<h2 style="margin:0">Assistant</h2><span class="tag about" style="align-self:flex-start"></span><div class="log" role="log" aria-live="polite"><div class="msg me"></div><div class="msg bot"></div></div><form class="send"><label class="sr" for="${id}-in">Message</label><input class="inp" id="${id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn p" type="submit">Send</button></form>`;
-  const log=$('.log',r);log.children[0].textContent=q;log.children[1].textContent=a;
-  r.setAbout=t=>$('.about',r).textContent='About: '+t;
-  $('form',r).onsubmit=e=>{e.preventDefault();const i=$('input',r),v=i.value.trim();if(!v)return;const m=document.createElement('div');m.className='msg me';m.textContent=v;log.append(m);i.value='';
-    setTimeout(()=>{const b=document.createElement('div');b.className='msg bot';b.textContent='[Sample reply: the real assistant will answer here and cite the announcement section]';log.append(b);log.scrollTop=log.scrollHeight},500);log.scrollTop=log.scrollHeight};
+  r.innerHTML=`<h2 style="margin:0">Assistant</h2><span class="tag about" style="align-self:flex-start"></span><div class="log" role="log" aria-live="polite"><div class="msg bot"></div></div><form class="send"><label class="sr" for="${id}-in">Message</label><input class="inp" id="${id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn p" type="submit">Send</button></form>`;
+  const log=$('.log',r),session=id+'-'+Math.random().toString(36).slice(2,10);let about='';
+  log.children[0].textContent=greeting;
+  r.setAbout=t=>{about=t;$('.about',r).textContent='About: '+t};
+  const say=(cls,text)=>{const m=document.createElement('div');m.className='msg '+cls;m.textContent=text;log.append(m);log.scrollTop=log.scrollHeight;return m};
+  $('form',r).onsubmit=async e=>{e.preventDefault();const i=$('input',r),btn=$('button',r),v=i.value.trim();if(!v)return;
+    say('me',v);i.value='';btn.disabled=true;
+    const b=say('bot','Thinking... the assistant may take a minute.');
+    try{
+      const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:session,message:v,context:about})});
+      const data=await res.json().catch(()=>({}));
+      if(res.ok)b.innerHTML=md(data.reply);else b.textContent='The assistant is unavailable: '+(data.detail||'error '+res.status);
+      const who=[...new Set((data.steps||[]).filter(x=>x.startsWith('judge uses ask_')).map(x=>x.split(' ')[2].slice(4)+' specialist'))];
+      if(res.ok&&who.length){const s=document.createElement('div');s.className='sm mut';s.style.marginTop='6px';
+        s.textContent='Consulted: '+who.join(', ')+((data.steps||[]).some(x=>x.includes('specialist uses'))?' · checked the database':'');b.append(s)}
+    }catch(err){b.textContent='Could not reach the assistant. Is the judge container running?'}
+    finally{btn.disabled=false;log.scrollTop=log.scrollHeight;refreshTeams()}};
   return r;
 }
 
@@ -206,7 +252,7 @@ function collab(root,role,reqId,after){
 
 /* ---------- PI page ---------- */
 const pi={tab:'req',lay:'A',open:false};
-const piChat=makeChat('chat-pi','What is still missing for SAMPLE-001?','[Reply lists missing items and cites the announcement section]');
+const piChat=makeChat('chat-pi','👋 Hi! How can I help you today? I can start a new application with you step by step, build your team, or check requirements, budgets, formatting and deadlines.');
 const left=()=>REQ.reduce((a,r)=>a+r.items.filter(i=>!i.done).length,0);
 const doneN=()=>REQ.reduce((a,r)=>a+r.items.filter(i=>i.done).length,0);
 const myCol=role=>COL.filter(c=>c.turn===role).length;
@@ -247,7 +293,7 @@ renderReq();renderReady();cal($('#p-cal'));piCol();drawPI();
 
 /* ---------- Staff page (SPS and Laura) ---------- */
 const st={top:'req',inner:'ov',sel:0,filt:'All'};
-const sChat=makeChat('chat-staff','Does the budget match the justification?','[Reply cites the documents and the announcement section]');
+const sChat=makeChat('chat-staff','👋 Hi! How can I help you today? Ask about any request, its team, requirements, budget, compliance or deadlines.');
 $('#s-chat').append(sChat);
 function renderStaff(){
   const stats=['All',...new Set(REQ.map(r=>r.status))];
@@ -269,7 +315,7 @@ $('#s-chips').onclick=e=>{const c=e.target.closest('[data-s]');if(c){st.filt=c.d
 $('#s-list').onclick=e=>{const b=e.target.closest('[data-i]');if(b){st.sel=+b.dataset.i;renderStaff()}};
 function setStatus(s){const r=REQ[st.sel];r.status=s;r.act.unshift(new Date().toLocaleDateString()+' · [Staff name]: '+s);syncStaff();refreshPI();toast(s+' (sample data only)')}
 $('#s-ok').onclick=()=>setStatus('Approved');$('#s-chg').onclick=()=>setStatus('Changes requested');
-cal($('#s-cal'));syncStaff();
+cal($('#s-cal'));syncStaff();refreshTeams();
 
 /* ---------- navigation ---------- */
 function route(){const v=(location.hash||'#login').slice(1),n=['pi','staff'].includes(v)?v:'login';['login','pi','staff'].forEach(x=>$('#view-'+x).hidden=x!==n);scrollTo(0,0)}
