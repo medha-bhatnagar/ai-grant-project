@@ -35,3 +35,10 @@ Each chunk stores: `text`, `embedding`, `chunk_id`, `doc_link`, `source`,
 - **Memory:** give the container at least 4 GB RAM; large PDFs can need more.
 - **MongoDB:** if MongoDB runs on the host, use `--network host` (Linux) or connect to `host.docker.internal`.
 - **Files:** mount the document folders into the container so the code can read them.
+
+
+# Relational Database
+```
+sudo mysql
+use affiliation;
+```
