@@ -49,6 +49,27 @@ changes on Colin's PC until the files are copied to `~/Team44` on the VM.
   Windows ones. Without it, the zip had Windows line endings, which break `.env` values and shell
   commands on the VM. It doesn't change any file's content.
 
+## Step 4: read the team's past grants (read only)
+
+The VM's MongoDB has a teammate's database `team44_shc22039_demo`, with a `past_submissions`
+collection: 60 chunks of real NIH sample applications (title, PI, page number, text).
+
+- `agents.json`
+  - New settings `library_db` (`team44_shc22039_demo`) and `library_collection` (`past_submissions`).
+  - New `past_grants` specialist: lists, summarizes and searches the past grants, naming the grant
+    and page it relied on.
+  - One new Judge rule: questions about past or sample grants in the library go to `past_grants`.
+- `judge/judge.py`
+  - Three new **read-only** query types: `library_list`, `library_read`, `library_search`. Search
+    words are matched as plain text, never as a pattern.
+  - `run_query` can read a second database. New tools `list_past_grants`, `read_past_grant` and
+    `search_past_grants`.
+  - `write_db()` now also refuses the library database, so nothing is ever written there.
+- `judge/test_judge.py`: 2 new tests (18 total, all pass).
+- Tested on the PC with a made-up stand-in library (`library_test`, deleted afterwards). Claude listed
+  the grants, summarized one with page numbers, and SAMPLE-001 questions still worked.
+- Not yet tested against the real `team44_shc22039_demo` on the VM.
+
 ## Running it on the VM (when ready)
 
 Run these in your own folder (`~/Team44`), never in a teammate's folder.

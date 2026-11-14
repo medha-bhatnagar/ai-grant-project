@@ -50,7 +50,8 @@ PROTECTED_DBS = {"grant_rag", "affiliation", "admin", "local", "config"}
 def write_db():
     """The database the Judge may write to, or an error if it's set to a protected one."""
     name = setting("mongo_db")
-    if name.lower() in PROTECTED_DBS:
+    library = (os.environ.get("LIBRARY_DB") or load_agents()["settings"].get("library_db") or "").lower()
+    if name.lower() in PROTECTED_DBS or name.lower() == library:
         raise PermissionError(f"Refusing to write to the team database {name!r}. "
                               f"Set mongo_db (or MONGO_DB) to a database of our own, like 'grants'.")
     return name
@@ -153,7 +154,8 @@ def chat_text(model, system, user_text):
 
 # ============================================================================ database (mongosh)
 
-QUERY_OPS = ("collections", "layout", "request", "sample", "find", "count", "aggregate")
+QUERY_OPS = ("collections", "layout", "request", "sample", "find", "count", "aggregate",
+             "library_list", "library_read", "library_search")
 FORBIDDEN = {"$out", "$merge", "$function", "$accumulator", "$where"}  # write data or run code
 MONGOSH = (os.environ.get("MONGOSH") or shutil.which("mongosh")
            or str(Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "mongosh" / "mongosh.exe"))
@@ -182,6 +184,18 @@ else if (a.op === "sample") out = d.getCollection(a.collection).find({}).limit(a
 else if (a.op === "find") out = d.getCollection(a.collection).find(a.filter, a.projection).limit(a.limit).toArray();
 else if (a.op === "count") out = d.getCollection(a.collection).countDocuments(a.filter);
 else if (a.op === "aggregate") out = d.getCollection(a.collection).aggregate(a.pipeline.concat([{$limit: a.limit}])).toArray();
+// The team's library of past grants (chunks of text with a title, PI and page number): read only.
+else if (a.op === "library_list") out = d.getCollection(a.collection).aggregate([
+    {$group: {_id: "$doc_link", title: {$first: "$document_title"}, pi: {$first: "$principal_investigator"},
+              organization: {$first: "$source_organization"}, notice: {$first: "$sample_notice"}, chunks: {$sum: 1}}},
+    {$sort: {title: 1}}, {$limit: 200}]).toArray();
+else if (a.op === "library_read") out = d.getCollection(a.collection).find({$or: [
+    {document_title: {$regex: a.q, $options: "i"}}, {principal_investigator: {$regex: a.q, $options: "i"}},
+    {doc_link: {$regex: a.q, $options: "i"}}]},
+    {_id: 0, text: 1, page_number: 1, chunk_id: 1, document_title: 1, principal_investigator: 1, doc_link: 1})
+  .sort({doc_link: 1, chunk_id: 1}).limit(400).toArray();
+else if (a.op === "library_search") out = d.getCollection(a.collection).find({text: {$regex: a.q, $options: "i"}},
+    {_id: 0, text: 1, page_number: 1, document_title: 1, principal_investigator: 1}).limit(12).toArray();
 print(EJSON.stringify(out, undefined, 0, {relaxed: true}));
 """
 
@@ -235,6 +249,11 @@ def check_query(args):
         # Small models often ask for 1 record and miss the rest (a request has a budget per year,
         # a document has several sections), so every lookup returns at least MIN_DOCS.
         clean["limit"] = max(MIN_DOCS, min(int(args.get("limit") or MIN_DOCS), MAX_DOCS))
+    if op in ("library_read", "library_search"):
+        text = str(args.get("q", "")).strip()
+        if not 2 <= len(text) <= 200:
+            raise QueryError("q must be 2 to 200 characters of plain text")
+        clean["q"] = re.escape(text)   # matched as plain text, never as a pattern
     if op in ("find", "count"):
         clean["filter"] = _loose_text(args.get("filter") or {})
     if op == "find":
@@ -249,10 +268,11 @@ def check_query(args):
     return clean
 
 
-def run_query(args, max_chars=MAX_RESULT_CHARS):
-    """Run one read-only query with mongosh; returns the result as JSON text."""
+def run_query(args, max_chars=MAX_RESULT_CHARS, db=None):
+    """Run one read-only query with mongosh; returns the result as JSON text.
+    db: which database to read (default: our own, settings.mongo_db)."""
     clean = check_query(args)
-    env = {**os.environ, "JUDGE_ARGS": json.dumps(clean), "JUDGE_DB": setting("mongo_db")}
+    env = {**os.environ, "JUDGE_ARGS": json.dumps(clean), "JUDGE_DB": db or setting("mongo_db")}
     try:
         proc = subprocess.run([MONGOSH, setting("mongo_url"), "--quiet", "--norc", "--eval", MONGOSH_SCRIPT],
                               capture_output=True, text=True, timeout=30, env=env)
@@ -290,6 +310,61 @@ DATABASE_TOOLS = {
     "find": 'find documents. args: {"collection": str, "filter": {...}, "projection": {...}, "limit": int}',
     "count": 'count documents. args: {"collection": str, "filter": {...}}',
     "aggregate": 'run an aggregation. args: {"collection": str, "pipeline": [...], "limit": int}',
+}
+
+
+# ============================================================================ library of past grants
+# The team's own database of past grant applications, split into chunks of text (made by the
+# team's uploader / retrieval code). Read only: settings.library_db and settings.library_collection.
+
+def _library():
+    s = load_agents()["settings"]
+    db = os.environ.get("LIBRARY_DB") or s.get("library_db")
+    if not db:
+        raise QueryError("No library of past grants is set up (settings.library_db in agents.json).")
+    return db, os.environ.get("LIBRARY_COLLECTION") or s.get("library_collection") or "past_submissions"
+
+
+def list_past_grants():
+    db, collection = _library()
+    return run_query({"op": "library_list", "collection": collection}, db=db)
+
+
+def read_past_grant(which):
+    """The full text of one past grant, found by words from its title, its PI's name or its file name."""
+    db, collection = _library()
+    chunks = json.loads(run_query({"op": "library_read", "collection": collection, "q": which},
+                                  max_chars=10**7, db=db))
+    if not chunks:
+        return f"No past grant matches {which!r}. Use list_past_grants to see the titles."
+    by_doc = {}
+    for c in chunks:
+        by_doc.setdefault(c.get("doc_link"), []).append(c)
+    if len(by_doc) > 1:
+        titles = "; ".join(f"{v[0].get('document_title')} (PI {v[0].get('principal_investigator')})"
+                           for v in by_doc.values())
+        return f"{len(by_doc)} past grants match {which!r}: {titles}. Ask with more of the title."
+    first = chunks[0]
+    text = "\n".join(f"[page {c.get('page_number', '?')}] {c.get('text', '')}" for c in chunks)
+    if len(text) > 30000:
+        text = text[:30000] + "\n... (the rest is cut off)"
+    return (f"TITLE: {first.get('document_title')}\nPI: {first.get('principal_investigator')}\n"
+            f"FILE: {first.get('doc_link')}\n\n{text}")
+
+
+def search_past_grants(words):
+    db, collection = _library()
+    return run_query({"op": "library_search", "collection": collection, "q": words}, max_chars=12000, db=db)
+
+
+LIBRARY_TOOLS = {
+    "list_past_grants": ("list every past grant in the team's library (title, PI, organization). args: {}",
+                         lambda args: list_past_grants()),
+    "read_past_grant": ('read the whole text of one past grant. args: {"which": "words from its title or PI name"}',
+                        lambda args: read_past_grant(str(args.get("which", "")))),
+    "search_past_grants": ('find passages in past grants that contain these exact words. '
+                           'args: {"words": "a short phrase, e.g. specific aims"}',
+                           lambda args: search_past_grants(str(args.get("words", "")))),
 }
 
 
@@ -379,6 +454,8 @@ def ask_specialist(name, question, on_event=print, user_message=""):
         tools = {op: (desc, lambda args, op=op: run_query({**args, "op": op}))
                  for op, desc in DATABASE_TOOLS.items()}
         instructions.append(database_layout())
+    if spec.get("library"):
+        tools.update(LIBRARY_TOOLS)
     return Final(Agent(f"{name} specialist", spec["model"], instructions, tools, on_event).ask(question))
 
 

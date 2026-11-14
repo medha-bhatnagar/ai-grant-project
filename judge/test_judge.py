@@ -132,5 +132,26 @@ def test_team_databases_are_never_written(monkeypatch):
     assert judge.write_db() == "grants"
 
 
+def test_library_is_read_only_and_searches_plain_text(monkeypatch):
+    q = judge.check_query({"op": "library_search", "collection": "past_submissions", "q": "aims (1)"})
+    assert q["q"] == r"aims\ \(1\)"            # a pattern can't sneak in
+    with pytest.raises(judge.QueryError):
+        judge.check_query({"op": "library_read", "collection": "past_submissions", "q": ""})
+    monkeypatch.setenv("LIBRARY_DB", "team44_shc22039_demo")
+    monkeypatch.setenv("MONGO_DB", "team44_shc22039_demo")   # pointing our writes at the library
+    with pytest.raises(PermissionError):
+        judge.write_db()
+    seen = {}
+    monkeypatch.setattr(judge, "run_query", lambda args, max_chars=0, db=None: seen.update(db=db) or "[]")
+    judge.list_past_grants()
+    assert seen["db"] == "team44_shc22039_demo"
+
+
+def test_past_grants_specialist_gets_the_library_tools():
+    spec = judge.load_agents()["specialists"]["past_grants"]
+    assert spec["library"] and not spec.get("database")
+    assert "ask_past_grants" in judge.Judge(on_event=lambda t: None).agent.tools
+
+
 def test_judge_has_the_team_tools():
     assert {"find_person", "list_team", "add_team_member"} <= set(judge.Judge(on_event=lambda t: None).agent.tools)
