@@ -119,5 +119,18 @@ def test_add_team_member_checks_before_writing(monkeypatch):
     assert "request id must look like" in judge.add_team_member("bad id!", "P001", "PI")
 
 
+def test_team_databases_are_never_written(monkeypatch):
+    def no_writes(*a, **k):
+        raise AssertionError("should not reach the database")
+    monkeypatch.setattr(judge.subprocess, "run", no_writes)
+    for name in ("grant_rag", "affiliation", "GRANT_RAG"):
+        monkeypatch.setenv("MONGO_DB", name)
+        assert "Refusing to write" in judge.add_team_member("SAMPLE-001", "P001", "PI")
+        with pytest.raises(SystemExit, match="Refusing to write"):
+            judge.setup_demo()
+    monkeypatch.setenv("MONGO_DB", "grants")
+    assert judge.write_db() == "grants"
+
+
 def test_judge_has_the_team_tools():
     assert {"find_person", "list_team", "add_team_member"} <= set(judge.Judge(on_event=lambda t: None).agent.tools)

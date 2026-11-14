@@ -4,6 +4,7 @@
     python judge.py pull                          download every model named in agents.json
     python judge.py check-db                      show the database's collections
     python judge.py add-document FILE REQUEST-ID  store a grant (.docx/.pdf/.txt/.md) for a request
+    python judge.py setup-demo                    load the made-up SAMPLE grants (our database only)
 
 How it works: the Judge (an LLM) reads the message and either answers or hands it to a specialist.
 For a named request, the code fetches all its records and computes the exact facts (missing items,
@@ -39,6 +40,20 @@ def setting(name):
     """A value from agents.json "settings"; an environment variable of the same name in
     capitals (e.g. MONGO_URL) overrides it."""
     return os.environ.get(name.upper()) or load_agents()["settings"][name]
+
+
+# The team's own databases. The Judge may READ them, but never writes to them: its writes
+# (team members, uploaded drafts, demo data) go only to settings.mongo_db (default "grants").
+PROTECTED_DBS = {"grant_rag", "affiliation", "admin", "local", "config"}
+
+
+def write_db():
+    """The database the Judge may write to, or an error if it's set to a protected one."""
+    name = setting("mongo_db")
+    if name.lower() in PROTECTED_DBS:
+        raise PermissionError(f"Refusing to write to the team database {name!r}. "
+                              f"Set mongo_db (or MONGO_DB) to a database of our own, like 'grants'.")
+    return name
 
 
 class LLMError(RuntimeError):
@@ -556,7 +571,10 @@ else {
   print("added");
 }
 """
-    env = {**os.environ, "JUDGE_ARGS": json.dumps({"m": member}), "JUDGE_DB": setting("mongo_db")}
+    try:
+        env = {**os.environ, "JUDGE_ARGS": json.dumps({"m": member}), "JUDGE_DB": write_db()}
+    except PermissionError as e:
+        return f"ERROR: {e}"
     proc = subprocess.run([MONGOSH, setting("mongo_url"), "--quiet", "--norc", "--eval", script],
                           capture_output=True, text=True, timeout=30, env=env)
     if proc.returncode != 0:
@@ -686,8 +704,11 @@ if (!d.requests.findOne({request_id: a.request_id}))
   d.requests.insertOne({request_id: a.request_id, pi: "(not set)", status: "Draft", items: []});
 print("ok");
 """
-    env = {**os.environ, "JUDGE_ARGS": json.dumps({"request_id": request_id, "name": name, "docs": docs}),
-           "JUDGE_DB": setting("mongo_db")}
+    try:
+        env = {**os.environ, "JUDGE_ARGS": json.dumps({"request_id": request_id, "name": name, "docs": docs}),
+               "JUDGE_DB": write_db()}
+    except PermissionError as e:
+        raise SystemExit(str(e))
     proc = subprocess.run([MONGOSH, setting("mongo_url"), "--quiet", "--norc", "--eval", script],
                           capture_output=True, text=True, timeout=60, env=env)
     if proc.returncode != 0:
@@ -703,6 +724,36 @@ print("ok");
 def all_models():
     agents = load_agents()
     return list(dict.fromkeys([agents["judge"]["model"], *(s["model"] for s in agents["specialists"].values())]))
+
+
+def setup_demo():
+    """Load the made-up SAMPLE-001..005 grants into OUR database (settings.mongo_db) only.
+    Refuses a protected team database, and any database holding real (non-SAMPLE) requests."""
+    try:
+        name = write_db()
+    except PermissionError as e:
+        raise SystemExit(str(e))
+    root = Path(__file__).resolve().parent
+    root = root if (root / "demo_data.js").exists() else root.parent
+    env = {**os.environ, "JUDGE_DB": name}
+    check = subprocess.run([MONGOSH, setting("mongo_url"), "--quiet", "--norc", "--eval",
+                            "print(db.getSiblingDB(process.env.JUDGE_DB).requests"
+                            ".countDocuments({request_id: {$not: /^SAMPLE-/}}))"],
+                           capture_output=True, text=True, timeout=30, env=env)
+    if check.returncode != 0:
+        raise SystemExit("Can't reach the database: " + (check.stderr or check.stdout).strip()[-300:])
+    real = int(check.stdout.strip().splitlines()[-1])
+    if real:
+        raise SystemExit(f"Database {name!r} has {real} real (non-SAMPLE) requests. Not touching it.")
+    print(f"Loading demo grants SAMPLE-001 to SAMPLE-005 into database {name!r} ...")
+    load = subprocess.run([MONGOSH, setting("mongo_url"), "--quiet", "--norc", "--eval",
+                           "db = db.getSiblingDB(process.env.JUDGE_DB); load(process.env.DEMO_FILE)"],
+                          capture_output=True, text=True, timeout=60,
+                          env={**env, "DEMO_FILE": str(root / "demo_data.js")})
+    if load.returncode != 0:
+        raise SystemExit("Loading failed: " + (load.stderr or load.stdout).strip()[-300:])
+    add_document(root / "samples" / "good_grant.docx", "SAMPLE-004")
+    add_document(root / "samples" / "bad_grant.docx", "SAMPLE-005")
 
 
 def main():
@@ -721,6 +772,8 @@ def main():
         if len(sys.argv) != 4:
             raise SystemExit('Usage: python judge.py add-document "C:\\path\\to\\grant.docx" SAMPLE-001')
         add_document(sys.argv[2], sys.argv[3])
+    elif command == "setup-demo":
+        setup_demo()
     elif command == "chat":
         judge = Judge(on_event=lambda text: print(f"  [{text}]"))
         print("Grant Judge (type 'quit' to leave). Replies can take a minute.")
