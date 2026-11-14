@@ -14,12 +14,12 @@ if (-not (Test-Path $py)) {
     & $py -m pip install --quiet -r judge\requirements.txt
 }
 
-$usesOllama = Select-String -Path agents.json -Pattern '"model":\s*"(?!claude)' -Quiet
+$usesOllama = Select-String -Path agents\judge.json, agents\llms\*.json -Exclude _* -Pattern '"model":\s*"(?!claude)' -Quiet
 if ($usesOllama) {
     try { Invoke-RestMethod http://localhost:11434/api/version -TimeoutSec 3 | Out-Null }
     catch { Write-Host "Ollama isn't running: start the Ollama app from the Start menu, then run this again." -ForegroundColor Yellow; exit 1 }
 }
-& $py judge\judge.py pull    # downloads any Ollama model in agents.json that's missing (quick if all present)
+& $py judge\judge.py pull    # downloads any Ollama model the agents use that's missing (quick if all present)
 
 if (-not (Test-NetConnection localhost -Port 27017 -WarningAction SilentlyContinue).TcpTestSucceeded) {
     Write-Host "Note: no database on localhost:27017. To use the VM's, run this in another window:" -ForegroundColor Yellow

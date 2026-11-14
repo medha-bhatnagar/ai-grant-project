@@ -3,32 +3,28 @@
 **New here? Read [START_HERE.md](START_HERE.md)** to run it on your own PC in a few steps.
 
 The dashboard's Assistant chat talks to an AI Judge, which hands questions to specialist agents.
-Each agent uses the model set in agents.json (Claude by default, or a local Ollama model), and
-specialists can read MongoDB (read-only).
+Each agent is a small file in the `agents/` folder (Claude by default, or a local Ollama model),
+and specialists can read MongoDB (read-only).
 
 ## The files
 
 ```
-agents.json          ← EVERY AGENT: the Judge and each specialist (model, instructions, database access)
-compose.yaml         ← runs it on the VM (3 containers: dashboard, judge, llm)
+agents/              ← THE AI: edit these to change it (see agents/README.md)
+  judge.json         ← the Judge
+  llms/              ← one file per LLM: add a file to add one, delete it to remove one
+  settings.json      ← database address, reply style
+compose.yaml         ← runs it on the VM (dashboard + judge containers)
 run_local.ps1        ← runs it on a Windows PC instead (no Docker)
 dashboard/           ← the web UI (index.html, plus nginx.conf and Dockerfile)
-judge/
-  judge.py           ← the engine that runs agents.json (nobody needs to edit this)
-  server.py          ← connects the dashboard's chat to the Judge
-  test_judge.py      ← tests (no AI needed)
-  Dockerfile, requirements.txt
+judge/               ← the engine (nobody needs to edit this)
 ```
 
-## Change what the agents do: edit agents.json
+## Change what the agents do
 
-- **Swap a model:** change its `"model"`. New models download with the pull command below.
-- **Change behaviour:** edit its `"instructions"` (one sentence per line).
-- **Add a specialist:** copy an entry under `"specialists"` and rename it. The Judge gets an
-  `ask_<name>` tool for it automatically.
-- **Database address:** `"settings"`. Put a password only in the `MONGO_URL` environment variable.
-
-Changes apply to the next chat message; no restart or rebuild needed.
+See [agents/README.md](agents/README.md). In short: copy `agents/llms/_TEMPLATE.json` to add an
+LLM, delete a file to remove one, and edit `instructions` to change one. Changes apply to the next
+chat message, with no restart or rebuild. Put a database password only in the `MONGO_URL`
+environment variable, never in a file.
 
 ## Run on the VM (Docker)
 

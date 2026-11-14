@@ -17,7 +17,7 @@ services:
     depends_on: [judge]
     restart: unless-stopped
 
-  # The Judge and specialists defined in agents.json.
+  # The Judge and the LLMs in the agents/ folder.
   judge:
     build:
       context: .
@@ -29,7 +29,7 @@ services:
       MONGO_URL: ${MONGO_URL:-}                          # optional: a database address with a password
       CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}  # from `claude setup-token`, kept in .env
     volumes:
-      - ./agents.json:/app/agents.json:ro     # edit agents.json without rebuilding
+      - ./agents:/app/agents:ro               # add, remove or edit LLMs without rebuilding
       - ./people.json:/app/people.json:ro
     restart: unless-stopped
 

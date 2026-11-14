@@ -46,7 +46,7 @@ Open **http://localhost:8080** and use the Assistant chat. Press **Ctrl+C** in P
 
 ## Where things are
 
-- `agents.json`: what the Judge and each specialist AI do (edit the instructions here)
+- `agents/`: the Judge and one file per LLM (see `agents/README.md` to add, remove or change one)
 - `people.json`: the people the assistant can add to a grant team
 - `dashboard/index.html`: the website
 - `judge/`: the code that runs it (no need to edit)

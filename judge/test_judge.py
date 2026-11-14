@@ -153,5 +153,20 @@ def test_past_grants_specialist_gets_the_library_tools():
     assert "ask_past_grants" in judge.Judge(on_event=lambda t: None).agent.tools
 
 
+def test_llms_are_added_and_removed_by_file(tmp_path, monkeypatch):
+    import shutil
+    shutil.copytree(judge.AGENTS_DIR, tmp_path / "agents")
+    monkeypatch.setattr(judge, "AGENTS_DIR", tmp_path / "agents")
+    llms = tmp_path / "agents" / "llms"
+    assert "_TEMPLATE" not in judge.load_agents()["specialists"]        # the template is ignored
+    shutil.copy(llms / "_TEMPLATE.json", llms / "biosketch.json")       # add one
+    (llms / "budget.json").unlink()                                     # remove one
+    tools = judge.Judge(on_event=lambda t: None).agent.tools
+    assert "ask_biosketch" in tools and "ask_budget" not in tools
+    (llms / "biosketch.json").write_text('{"model": "x",}', encoding="utf-8")   # a typo
+    with pytest.raises(SystemExit, match="biosketch.json has a typo on line 1"):
+        judge.load_agents()
+
+
 def test_judge_has_the_team_tools():
     assert {"find_person", "list_team", "add_team_member"} <= set(judge.Judge(on_event=lambda t: None).agent.tools)

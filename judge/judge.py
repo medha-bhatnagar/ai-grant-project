@@ -1,7 +1,7 @@
-"""The engine that runs the agents defined in agents.json (their models and instructions live there).
+"""The engine that runs the agents in the agents/ folder (the Judge and one file per LLM).
 
     python judge.py chat                          talk to the Judge in the terminal
-    python judge.py pull                          download every model named in agents.json
+    python judge.py pull                          download every local model the agents use
     python judge.py check-db                      show the database's collections
     python judge.py add-document FILE REQUEST-ID  store a grant (.docx/.pdf/.txt/.md) for a request
     python judge.py setup-demo                    load the made-up SAMPLE grants (our database only)
@@ -23,21 +23,34 @@ from pathlib import Path
 import httpx
 
 HERE = Path(__file__).resolve().parent
-AGENTS_FILE = next((p for p in (HERE / "agents.json", HERE.parent / "agents.json") if p.exists()),
-                   HERE.parent / "agents.json")
+# The agents folder: settings.json, judge.json, and llms/<name>.json (one file per LLM).
+AGENTS_DIR = next((p for p in (HERE / "agents", HERE.parent / "agents") if p.is_dir()), HERE.parent / "agents")
 MAX_STEPS = 8            # tool calls an agent may make before it must answer
 MIN_DOCS = 10            # fewest documents a query returns (see check_query)
 MAX_DOCS = 20            # most documents one query may return
 MAX_RESULT_CHARS = 6000  # longest query result shown to an LLM
 
 
+def _read_json(path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"{path.relative_to(AGENTS_DIR.parent)} has a typo on line {e.lineno}: {e.msg} "
+                         "(often a missing comma or quote).")
+
+
 def load_agents():
-    """agents.json, read fresh each time so edits apply to the next message."""
-    return json.loads(AGENTS_FILE.read_text(encoding="utf-8"))
+    """The agents folder, read fresh each time so edits apply to the next message.
+    Each file in agents/llms/ is one specialist LLM, named after the file. Files starting with
+    _ (like _TEMPLATE.json) are ignored, so adding or removing an LLM is adding or deleting a file."""
+    return {"settings": _read_json(AGENTS_DIR / "settings.json"),
+            "judge": _read_json(AGENTS_DIR / "judge.json"),
+            "specialists": {p.stem: _read_json(p) for p in sorted((AGENTS_DIR / "llms").glob("*.json"))
+                            if not p.name.startswith("_")}}
 
 
 def setting(name):
-    """A value from agents.json "settings"; an environment variable of the same name in
+    """A value from agents/settings.json; an environment variable of the same name in
     capitals (e.g. MONGO_URL) overrides it."""
     return os.environ.get(name.upper()) or load_agents()["settings"][name]
 
@@ -321,7 +334,7 @@ def _library():
     s = load_agents()["settings"]
     db = os.environ.get("LIBRARY_DB") or s.get("library_db")
     if not db:
-        raise QueryError("No library of past grants is set up (settings.library_db in agents.json).")
+        raise QueryError("No library of past grants is set up (library_db in agents/settings.json).")
     return db, os.environ.get("LIBRARY_COLLECTION") or s.get("library_collection") or "past_submissions"
 
 
@@ -412,7 +425,7 @@ class Agent:
 
 
 def ask_specialist(name, question, on_event=print, user_message=""):
-    """A fresh specialist for each question, built from its entry in agents.json. Its answer goes
+    """A fresh specialist for each question, built from its file in agents/llms/. Its answer goes
     straight to the user (Final), so it isn't reworded and garbled by another model.
 
     When a request is named (in the question or on screen), the code fetches all of its records and
@@ -676,7 +689,7 @@ TEAM_TOOLS = {
 
 class Judge:
     """The agent the user talks to. It remembers the conversation and has one ask_<name> tool
-    per specialist in agents.json, plus the team tools (find_person, list_team, add_team_member)."""
+    per LLM in agents/llms/, plus the team tools (find_person, list_team, add_team_member)."""
 
     def __init__(self, on_event=print):
         self.on_event = on_event   # where progress steps go; the server swaps it per request

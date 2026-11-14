@@ -77,7 +77,7 @@ if __name__ == "__main__":
     site.mount("/api", app)
     site.get("/")(lambda: FileResponse(dashboard))
     agents = load_agents()
-    print("Grant Application Assistant: http://localhost:8080   (Ctrl+C to stop)\n\nAgents (from agents.json):")
+    print("Grant Application Assistant: http://localhost:8080   (Ctrl+C to stop)\n\nAgents (from the agents/ folder):")
     print(f"  judge         -> {agents['judge']['model']}")
     for name, spec in agents["specialists"].items():
         print(f"  {name:<13} -> {spec['model']}")

@@ -70,6 +70,26 @@ collection: 60 chunks of real NIH sample applications (title, PI, page number, t
   the grants, summarized one with page numbers, and SAMPLE-001 questions still worked.
 - Not yet tested against the real `team44_shc22039_demo` on the VM.
 
+## Step 5: one file for the Judge, one file per LLM
+
+`agents.json` was split into an `agents/` folder, without changing any content:
+
+```
+agents/judge.json        the Judge
+agents/settings.json     database address, reply style
+agents/llms/<name>.json  one per LLM (budget, compliance, database, formatting, past_grants,
+                         requirements, submission, writing) plus _TEMPLATE.json to copy
+agents/README.md         how to add, remove or change an LLM
+```
+
+- `judge/judge.py`: `load_agents()` reads the folder. Files starting with `_` are ignored. A typo
+  in a file gives an error naming that file and line.
+- `compose.yaml` mounts the `agents/` folder, so edits apply without a rebuild. `judge/Dockerfile`
+  copies it. `run_local.ps1`, `README.md` and `START_HERE.md` point to the new place.
+- Tested: the folder loads exactly the same settings as the old `agents.json`. There's a new test
+  (add, remove, typo), 19 tests pass, and a live Claude question was answered correctly.
+- To undo: `git revert` this commit (it brings back `agents.json`).
+
 ## Running it on the VM (when ready)
 
 Run these in your own folder (`~/Team44`), never in a teammate's folder.

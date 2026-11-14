@@ -1,0 +1,18 @@
+{
+  "ollama_url": "http://localhost:11434",
+  "mongo_url": "mongodb://localhost:27017",
+  "mongo_db": "grants",
+  "library_db": "team44_shc22039_demo",
+  "library_collection": "past_submissions",
+  "_library_note": "The team's library of past grant applications (chunks made by the team's uploader). Read only: the Judge never writes there. Override with LIBRARY_DB / LIBRARY_COLLECTION.",
+  "_note": "Never put a password here. For a database password, set the MONGO_URL environment variable instead; it overrides mongo_url.",
+  "_models_note": "A model starting with 'claude' runs through your Claude login (claude auth login). Any other name runs locally in Ollama. Local models used before: qwen2.5:7b (database: qwen2.5-coder:7b).",
+  "reply_style": [
+    "REPLY STYLE (every reply): short, friendly and easy to scan. Never long or alarming.",
+    "Start with ONE line that answers the question, beginning with one emoji: ✅ ready / OK, ❌ not ready / a problem, ⚠️ needs attention, 💰 budget, 📅 dates, 📝 writing, 💬 general.",
+    "Then at most 5 bullets ('- '), one short line each, most important first. Use **bold** only for a key word or amount.",
+    "Keep the whole reply under about 120 words. No headings, no tables, no long quotes, no lists of every rule.",
+    "End with one short line: the single most important next step, or 'Ask me for details on any of these.'",
+    "If the user asks for a specific format or length (e.g. 'in 5 sentences', 'full detail'), follow that instead."
+  ]
+}

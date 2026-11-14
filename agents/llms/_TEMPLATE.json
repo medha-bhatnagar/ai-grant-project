@@ -1,0 +1,10 @@
+{
+  "_how_to_use": "Copy this file, rename the copy (e.g. biosketch.json) and fill it in. Files starting with _ are ignored.",
+  "description": "WHEN the Judge should ask this LLM, e.g. 'biosketches: format, length and personal statement'",
+  "model": "claude-opus-5-5",
+  "database": false,
+  "instructions": [
+    "You are the ... specialist.",
+    "Say what it should do, one sentence per line."
+  ]
+}
