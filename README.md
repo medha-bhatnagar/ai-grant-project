@@ -32,12 +32,14 @@ Changes apply to the next chat message; no restart or rebuild needed.
 
 ## Run on the VM (Docker)
 
-    docker compose up -d --build                    # first time: a few minutes
-    docker compose exec judge python judge.py pull  # download the models (~13 GB, first time)
-    docker compose exec judge python judge.py check-db
+Full steps (and how to undo them) are in [VM_CHANGES.md](VM_CHANGES.md). In short:
 
-Then from your PC: `ssh -L 8080:localhost:8080 cjw22003@uchcgrantai.cse.uconn.edu`
-and open http://localhost:8080. Other commands: `docker compose logs -f judge` (watch it work),
+    cp .env.example .env                            # then put your Claude token in it
+    docker compose up -d --build                    # first time: a few minutes
+    docker compose exec judge python judge.py setup-demo   # sample grants, our "grants" database only
+
+Then from your PC: `ssh -L 8090:localhost:8090 cjw22003@uchcgrantai.cse.uconn.edu`
+and open http://localhost:8090. Other commands: `docker compose logs -f judge` (watch it work),
 `docker compose exec judge python judge.py chat` (terminal chat), `docker compose down` (stop).
 
 ## Run on a Windows PC
