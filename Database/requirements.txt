@@ -1,0 +1,4 @@
+pymongo>=4.7
+sentence-transformers
+transformers
+docling
