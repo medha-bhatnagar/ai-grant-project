@@ -43,6 +43,12 @@ changes on Colin's PC until the files are copied to `~/Team44` on the VM.
 - **Not tested yet:** Docker isn't installed on the PC, so the containers have only been built on
   paper. The first real build is on the VM (steps below).
 
+## Step 3: Linux line endings
+
+- New `.gitattributes`: files get Linux line endings (LF) in git and in the zip; `.ps1` scripts keep
+  Windows ones. Without it, the zip had Windows line endings, which break `.env` values and shell
+  commands on the VM. It doesn't change any file's content.
+
 ## Running it on the VM (when ready)
 
 Run these in your own folder (`~/Team44`), never in a teammate's folder.

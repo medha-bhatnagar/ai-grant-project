@@ -1,0 +1,5 @@
+# Linux line endings for everything (the VM and Docker need them); Windows ones for PowerShell scripts.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.docx binary
+*.pdf binary
