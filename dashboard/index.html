@@ -50,13 +50,6 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
 .log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
 .msg p{margin:0 0 6px}.msg p:last-child{margin-bottom:0}
 .msg ul{margin:4px 0 6px;padding-left:18px}.msg li{margin:3px 0}
-.dk-row{display:grid;grid-template-columns:minmax(150px,1.3fr) auto minmax(170px,1fr);gap:12px;align-items:start;padding:12px 0;border-top:1px solid #E6E9EE}
-.dk-tags{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
-.tag.ok{border-color:#2E7D32;color:#1B5E20;background:#EDF7EE}.tag.bad{border-color:#B3261E;color:#8A1C1C;background:#FDECEC}
-.dz-small{margin:6px 0 0;padding:8px;font-size:13px}
-.mail{border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:10px;background:#fff}
-.mail pre{white-space:pre-wrap;font:inherit;font-size:13px;margin:8px 0 0}
-@media (max-width:900px){.dk-row{grid-template-columns:1fr}}
 .msg{border-radius:8px;padding:10px;font-size:14px;max-width:88%}
 .msg.me{background:#E9EEF6;align-self:flex-end}.msg.bot{background:var(--bg);border:1px solid var(--line)}
 .send{display:flex;gap:8px}
@@ -108,7 +101,6 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
   <div class="page"><div class="pi-wrap lay-A" id="pi-wrap">
     <div class="tabs" role="tablist" id="p-tabs" aria-label="Investigator sections"></div>
     <div class="shell"><div class="main">
-      <div role="tabpanel" id="pn-docket" hidden><div id="p-docket"></div></div>
       <div role="tabpanel" id="pn-req"><h2>Requests that need your attention</h2><div id="p-req"></div></div>
       <div role="tabpanel" id="pn-dl" hidden><div class="card" id="p-cal"></div></div>
       <div role="tabpanel" id="pn-ready" hidden><h2>Completed documents</h2><div id="p-ready"></div></div>
@@ -129,7 +121,6 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
         <span style="display:flex;gap:8px"><button class="btn" type="button" id="s-chg">Request changes</button><button class="btn p" type="button" id="s-ok">Approve</button></span></div></div>
         <div class="tabs" role="tablist" id="s-inner" aria-label="Request sections"></div><div id="s-panel"></div></div>
       <aside class="dock" id="s-chat"></aside></div></div>
-    <div id="sn-docket" hidden><div class="shell"><div class="main" id="s-docket"></div><aside class="dock" id="s-chat-docket"></aside></div></div>
     <div id="sn-col" hidden><h2>Grant teams</h2><div class="card" id="s-team"></div><h2>Collaboration queue (all requests)</h2><div class="card" id="s-colall"></div></div>
     <div id="sn-dl" hidden><div class="card" id="s-cal"></div></div>
   </div>
@@ -214,9 +205,9 @@ function makeChat(id,greeting){
       if(res.ok)b.innerHTML=md(data.reply);else b.textContent='The assistant is unavailable: '+(data.detail||'error '+res.status);
       const who=[...new Set((data.steps||[]).filter(x=>x.startsWith('judge uses ask_')).map(x=>x.split(' ')[2].slice(4)+' specialist'))];
       if(res.ok&&who.length){const s=document.createElement('div');s.className='sm mut';s.style.marginTop='6px';
-        s.textContent='Consulted: '+who.join(', ')+((data.steps||[]).some(x=>x.includes('specialist uses'))?' · used its tools':'');b.append(s)}
+        s.textContent='Consulted: '+who.join(', ')+((data.steps||[]).some(x=>x.includes('specialist uses'))?' · checked the database':'');b.append(s)}
     }catch(err){b.textContent='Could not reach the assistant. Is the app running?'}
-    finally{btn.disabled=false;log.scrollTop=log.scrollHeight;refreshTeams();refreshDocket()}};
+    finally{btn.disabled=false;log.scrollTop=log.scrollHeight;refreshTeams()}};
   return r;
 }
 
@@ -295,39 +286,6 @@ async function liveCollaboration(root, role, reqId){
   }catch(error){root.innerHTML=`<p class="err">${esc(error.message)}</p>`}
 }
 
-/* ---------- collaboration docket (the professor's demo plan) ---------- */
-let DOCKET={dockets:[],outbox:[],doc_types:[]};
-async function refreshDocket(){
-  try{const r=await fetch('/api/docket',{credentials:'same-origin'});if(!r.ok)return;DOCKET=await r.json()}catch(e){return}
-  ['#p-docket','#s-docket'].forEach(s=>{const el=$(s);if(el)renderDocket(el)});
-  if(typeof drawPI==='function'&&ME)drawPI();
-}
-function renderDocket(root){
-  const sps=ME&&ME.role==='sps';
-  if(!DOCKET.dockets.length){root.innerHTML=`<div class="card"><h2>Collaboration docket</h2><p class="mut">No docket yet. Ask the assistant, for example:</p>
-    <p class="sm"><em>"I plan to respond to RFA-HG-27-007 and there will be a team of investigators: George Liu, James Slaughter, Chih-Ming Tsai, C. Creech and Issac Thomasen. Can you create the initial collaboration docket for this application?"</em></p></div>`;return}
-  const tag=(ok,yes,no,none)=>ok===true?`<span class="tag ok">✅ ${yes}</span>`:ok===false?`<span class="tag bad">❌ ${no}</span>`:`<span class="tag">— ${none}</span>`;
-  root.innerHTML=DOCKET.dockets.slice().reverse().map(d=>{const cv=d.investigators.filter(p=>p.cv).length;
-    return `<div class="card"><div class="row h"><div><h2 style="margin:0">Collaboration docket · ${esc(d.id)}</h2><span class="sm mut">${d.investigators.length} investigators · created ${esc(d.created_at)}</span></div><span class="tag">${cv} of ${d.investigators.length} CVs submitted</span></div>
-    ${d.investigators.map(p=>`<div class="dk-row"><div><strong>${esc(p.name)}</strong><br><span class="sm mut">${esc(p.affiliation||'Not in the affiliation file')}</span><br><span class="sm mut">${esc(p.email||'no email on file')}${p.phone?' · '+esc(p.phone):''}</span></div>
-      <div class="dk-tags">${tag(p.cv?true:false,'CV submitted','CV missing')}${tag(p.training==='yes'?true:p.training==='no'?false:null,'Training done','Training not done','No training record')}</div>
-      <div>${p.documents.map(x=>`<div class="sm"><a href="/api/docket/files/${esc(x.id)}">${esc(x.doc_type)}: ${esc(x.original_name)}</a><br><span class="mut">${esc(x.uploaded_by)} · ${esc(x.uploaded_at)}</span></div>`).join('')}
-        <select class="inp sm" data-dt style="margin-top:6px;min-height:32px">${DOCKET.doc_types.map(t=>`<option>${esc(t)}</option>`).join('')}</select>
-        <label class="dropzone dz-small" data-dz="${esc(d.id)}|${esc(p.name)}">Drop ${esc(p.name.split(/[ .]/).filter(Boolean).pop())}'s file here or click<input type="file" accept=".pdf,.doc,.docx" hidden></label></div></div>`).join('')}</div>`}).join('')
-  +`<div class="card"><div class="row h"><h2 style="margin:0">Outbox</h2><span class="sm mut">Demo outbox: emails are shown here, nothing is actually sent</span></div>
-    ${DOCKET.outbox.slice().reverse().map(m=>`<div class="mail"><strong>To: ${esc(m.to_name)}</strong> <span class="sm mut">&lt;${esc(m.to_email||'no address on file')}&gt; · ${esc(m.sent_at)} · from ${esc(m.sender||'SPS')} · ${esc(m.docket)}</span><br><strong>${esc(m.subject)}</strong><pre>${esc(m.body)}</pre></div>`).join('')||'<p class="mut sm">No emails yet. Ask: "Who has not submitted their CV? Can you send them an email?"</p>'}
-    ${sps?'<p style="margin:12px 0 0"><button class="btn" type="button" data-docket-reset>Reset the demo</button></p>':''}</div>`;
-  $$('[data-dz]',root).forEach(z=>{const[did,who]=z.dataset.dz.split('|'),inp=$('input',z),sel=$('[data-dt]',z.parentElement);
-    const send=async f=>{if(!f)return;const form=new FormData();form.append('investigator',who);form.append('doc_type',sel.value);form.append('file',f);
-      z.firstChild.textContent='Uploading...';const r=await fetch(`/api/docket/${encodeURIComponent(did)}/upload`,{method:'POST',body:form,credentials:'same-origin'});
-      if(!r.ok){toast((await r.json().catch(()=>({}))).detail||'Upload failed')}else toast(sel.value+' uploaded for '+who);refreshDocket()};
-    inp.onchange=e=>send(e.target.files[0]);
-    ['dragenter','dragover'].forEach(t=>z.addEventListener(t,e=>{e.preventDefault();z.classList.add('over')}));
-    ['dragleave','drop'].forEach(t=>z.addEventListener(t,e=>{e.preventDefault();z.classList.remove('over')}));
-    z.addEventListener('drop',e=>send(e.dataTransfer.files[0]))});
-  const rs=$('[data-docket-reset]',root);if(rs)rs.onclick=async()=>{if(!confirm('Empty all dockets, uploads and the outbox?'))return;await fetch('/api/docket/reset',{method:'POST',credentials:'same-origin'});toast('Demo reset');refreshDocket()};
-}
-
 /* ---------- PI page ---------- */
 const pi={tab:'req',lay:'A',open:false};
 const piChat=makeChat('chat-pi','👋 Hi! How can I help you today? I can start a new application with you step by step, build your team, or check requirements, budgets, formatting and deadlines.');
@@ -353,10 +311,10 @@ function renderReady(){
   drop.addEventListener('drop',e=>submit(e.dataTransfer.files[0]));
 }
 function drawPI(focus){
-  const items=[['docket','Docket'],['req','Requests',left()],['dl','Deadlines'],['ready','Ready to submit',doneN()],['col','Collaboration',myCol('PI')]];
+  const items=[['req','Requests',left()],['dl','Deadlines'],['ready','Ready to submit',doneN()],['col','Collaboration',myCol('PI')]];
   if(pi.tab==='chat')pi.tab='req';
   drawTabs($('#p-tabs'),items,pi.tab,id=>{pi.tab=id;drawPI()});
-  ['docket','req','dl','ready','col','chat'].forEach(id=>$('#pn-'+id).hidden=id!==pi.tab);
+  ['req','dl','ready','col','chat'].forEach(id=>$('#pn-'+id).hidden=id!==pi.tab);
   $('#pi-wrap').className='pi-wrap lay-'+pi.lay;
   $('#dock').append(piChat);
   $('#drawer').hidden=true;$('#fab').hidden=true;
@@ -387,9 +345,8 @@ function renderStaff(){
   if(st.inner==='col'){p.innerHTML='<div class="card" id="s-col1"></div>';liveCollaboration($('#s-col1'),'SPS',r.id)}
   if(st.inner==='act')p.innerHTML=`<div class="card"><h2>Activity</h2>${r.act.map(a=>`<div class="row">${esc(a)}</div>`).join('')}</div>`;
   sChat.setAbout(r.id+' ('+r.pi+')');
-  drawTabs($('#s-tabs'),[['docket','Docket'],['req','Requests',REQ.filter(x=>x.status==='In review by SPS').length],['col','Collaboration',myCol('SPS')],['dl','Deadlines']],st.top,id=>{st.top=id;renderStaff()});
-  ['docket','req','col','dl'].forEach(id=>$('#sn-'+id).hidden=id!==st.top);
-  $(st.top==='docket'?'#s-chat-docket':'#s-chat').append(sChat);if(st.top==='docket')sChat.setAbout('Collaboration docket');
+  drawTabs($('#s-tabs'),[['req','Requests',REQ.filter(x=>x.status==='In review by SPS').length],['col','Collaboration',myCol('SPS')],['dl','Deadlines']],st.top,id=>{st.top=id;renderStaff()});
+  ['req','col','dl'].forEach(id=>$('#sn-'+id).hidden=id!==st.top);
 }
 function syncStaff(){renderStaff();liveCollaboration($('#s-colall'),'SPS',null)}
 $('#s-chips').onclick=e=>{const c=e.target.closest('[data-s]');if(c){st.filt=c.dataset.s;renderStaff()}};
@@ -413,7 +370,7 @@ function route(){
   box.hidden=!(n==='login'&&e&&ERR[e]);box.textContent=ERR[e]||'';
   scrollTo(0,0);
 }
-async function boot(){try{const r=await fetch('/api/me',{credentials:'same-origin'});ME=r.ok?await r.json():null}catch(e){ME=null}route();if(ME){refreshTeams();refreshDocket()}}
+async function boot(){try{const r=await fetch('/api/me',{credentials:'same-origin'});ME=r.ok?await r.json():null}catch(e){ME=null}route();if(ME)refreshTeams()}
 async function signOut(){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(e){}ME=null;history.replaceState(null,'','/#login');route()}
 addEventListener('hashchange',route);boot();
 document.addEventListener('click',e=>{if(e.target.closest('[data-signout]'))signOut();const t=e.target.closest('[data-toast]');if(t)toast(t.dataset.toast+' is not connected yet (layout only)')});

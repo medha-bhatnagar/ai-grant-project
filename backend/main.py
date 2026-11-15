@@ -165,10 +165,6 @@ from .assistant import router as assistant_router  # the AI Judge chat (signed-i
 
 app.include_router(assistant_router)
 
-from .docket import router as docket_router  # the collaboration docket (Monday demo)
-
-app.include_router(docket_router)
-
 
 if Path(config.FRONTEND_DIR).is_dir():  # last, so it never hides the routes above
     app.mount("/", StaticFiles(directory=config.FRONTEND_DIR, html=True), name="frontend")

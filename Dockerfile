@@ -37,9 +37,8 @@ COPY --chown=app:app backend ./backend
 COPY --chown=app:app dashboard ./dashboard
 COPY --chown=app:app judge/*.py ./judge/
 COPY --chown=app:app agents ./agents
-COPY --chown=app:app demo ./demo
 COPY --chown=app:app people.json demo_data.js ./
-COPY --chown=app:app samples/*.docx ./samples/
+COPY --chown=app:app samples ./samples
 RUN mkdir -p /app/data/uploads
 
 ENV APP_PORT=8000

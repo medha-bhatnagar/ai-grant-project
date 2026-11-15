@@ -26,9 +26,7 @@ class ChatIn(BaseModel):
 @router.post("/chat")
 def chat(body: ChatIn, user=Depends(signed_in)):
     session = f"{user['login_id']}:{body.session_id}"[:200]
-    who = f"signed in as {user['display_name']} ({'SPS staff' if user['role'] == 'sps' else 'investigator'})"
-    context = f"{body.context}; {who}" if body.context else who
-    return judge_server.chat(judge_server.ChatIn(session_id=session, message=body.message, context=context))
+    return judge_server.chat(judge_server.ChatIn(session_id=session, message=body.message, context=body.context))
 
 
 @router.get("/team")

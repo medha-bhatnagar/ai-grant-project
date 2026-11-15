@@ -137,28 +137,17 @@ Run these in your own folder (`~/Team44`), never in a teammate's folder.
 
 **To undo on the VM:** `docker compose down` (removes only the grant-assistant container), then
 delete `~/Team44/ai-grant-project`.
-## Step 7: the Monday demo (collaboration docket, uploads, CV emails, training)
+## Step 7: "who has or hasn't submitted their CV?" (simple version)
 
-The professor's Demo Plan (his email and `Overview.pptx`). The demo script is in `DEMO_MONDAY.md`.
+The bigger Monday-demo build (Docket tab, uploads, outbox emails) was undone, as asked. What's added:
 
-- New `demo/`: his `affiliation_sample1.csv`, `affiliation_sample.csv` and `compliance.csv` (copied
-  as is; no PDFs in the repo).
-- New `judge/docket.py`: the docket store. It's **one JSON file plus the uploaded files** in
-  `data/docket` (`DOCKET_DIR`), with no database. It handles name matching ("Dong-Guk Shin" =
-  "Dong Shin"), training lookup, CV-request drafts, and a demo outbox (nothing is sent), and only
-  accepts .pdf, .doc and .docx files.
-- `judge/judge.py`: new tools `find_affiliation`, `fill_docket_panel` (the Filler), `docket_status`,
-  `check_training`, `draft_cv_requests` and `send_emails`. **Agent files now list their tools by
-  name** (`"tools": [...]`), and an unknown tool name gives a clear error.
-- New LLM files `agents/llms/db_agent.json` and `agents/llms/compliance_agent.json`.
-  `agents/judge.json` gets the docket tools and a "docket" section, including "never send emails
-  without a yes".
-- New `backend/docket.py`: `GET /api/docket`, upload, download, and reset (SPS only). All of it
-  needs sign-in. `backend/assistant.py` tells the AI who is signed in, so emails are signed correctly.
-- `dashboard/index.html`: a new **Docket** tab (first tab, PI and staff) with a drop zone per
-  investigator, CV and training tags, and the Outbox. On the staff side the chat moves next to it.
-- `Dockerfile` copies `demo/`.
-- Tested: 21 tests pass. Full browser run as Demo SPS Staff: docket created (db_agent); 3 real CVs
-  uploaded (a .exe was refused and a signed-out request got 401); "3 of 5" CV status; 2 emails
-  drafted, sent only after "yes", and shown in the Outbox; training checked (compliance_agent).
+- `samples/affiliation_sample1.csv`: the grant team (the professor's 5 investigators).
+- `samples/cvs/`: the professor's CV files (`Data_Samples/CVs`). A CV counts as submitted when its
+  file name starts with the person's last name. To mark someone as submitted, add their file here.
+- `judge/judge.py`: new `cv_status` tool. Agent files can now list tools by name (`"tools": [...]`),
+  and an unknown tool name gives a clear error.
+- New LLM file `agents/llms/cv_checker.json`, plus one line in `agents/judge.json` that sends CV
+  questions straight to it.
+- `Dockerfile` copies the whole `samples/` folder.
+- Tested: 20 tests pass. Live answer: "3 of 5 submitted (Liu, Slaughter, Creech); missing Tsai and Thomasen".
 - To undo: `git revert` this commit.
