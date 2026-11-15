@@ -1,45 +1,43 @@
-# The whole system on the VM. See VM_CHANGES.md for setup and START_HERE.md for the PC.
-# Its own project name, so it never replaces a teammate's containers.
-name: colin-judge
+# The whole app in one container. Settings come from the .env file (copy .env.example).
+#   docker compose up -d --build      start (first time: a few minutes)
+#   docker compose down               stop
+#
+# Its own project name, so it never replaces a teammate's containers. To run a second copy on the
+# same machine, set COMPOSE_PROJECT_NAME and APP_PORT to something different in that copy's .env.
+name: grant-assistant
 
-# dashboard and judge share the VM's network so the Judge reaches the VM's MongoDB at
-# localhost (like mongosh does). Everything listens on 127.0.0.1: use an SSH tunnel.
-# Ports default to 8090 (website) and 8010 (judge) so they don't clash with anything on
-# 8080/8000; change them in the .env file if those are taken too.
 services:
-  # Web UI on http://localhost:${DASHBOARD_PORT}. Its Assistant chat calls /api/chat -> the judge.
-  dashboard:
-    build: ./dashboard
+  app:
+    build: .
+    # Shares the VM's network so the Judge reaches the VM's MongoDB at localhost, like mongosh does.
+    # It listens on 127.0.0.1 only: open it from your PC through an SSH tunnel.
     network_mode: host
     environment:
-      DASHBOARD_PORT: ${DASHBOARD_PORT:-8090}
-      JUDGE_PORT: ${JUDGE_PORT:-8010}
-    depends_on: [judge]
-    restart: unless-stopped
-
-  # The Judge and the LLMs in the agents/ folder.
-  judge:
-    build:
-      context: .
-      dockerfile: judge/Dockerfile
-    network_mode: host
-    environment:
-      JUDGE_PORT: ${JUDGE_PORT:-8010}
-      MONGO_DB: ${MONGO_DB:-grants}                      # our own database; never grant_rag
-      MONGO_URL: ${MONGO_URL:-}                          # optional: a database address with a password
+      APP_PORT: ${APP_PORT:-8000}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-demo}
+      ALLOW_DEMO: ${ALLOW_DEMO:-1}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8000}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-only-change-me}
+      SESSION_HOURS: ${SESSION_HOURS:-8}
+      CAS_SERVER_URL: ${CAS_SERVER_URL:-}
+      OIDC_METADATA_URL: ${OIDC_METADATA_URL:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_USER_CLAIM: ${OIDC_USER_CLAIM:-preferred_username}
+      MONGO_DB: ${MONGO_DB:-grants}                          # the Judge's own database; never grant_rag
+      MONGO_URL: ${MONGO_URL:-}                              # optional: a database address with a password
       CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}  # from `claude setup-token`, kept in .env
     volumes:
+      - app_data:/app/data                    # sign-in sessions, collaboration documents and uploads
       - ./agents:/app/agents:ro               # add, remove or edit LLMs without rebuilding
       - ./people.json:/app/people.json:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:${APP_PORT:-8000}/api/health')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
-  # Optional local LLMs (Ollama). Off unless you ask for it, because the VM may already run
-  # Ollama on port 11434. Start it with:  docker compose --profile ollama up -d
-  llm:
-    image: ollama/ollama:latest
-    profiles: [ollama]
-    ports:
-      - "127.0.0.1:11434:11434"
-    volumes:
-      - ./data/ollama:/root/.ollama
-    restart: unless-stopped
+volumes:
+  app_data:

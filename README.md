@@ -2,9 +2,10 @@
 
 **New here? Read [START_HERE.md](START_HERE.md)** to run it on your own PC in a few steps.
 
-The dashboard's Assistant chat talks to an AI Judge, which hands questions to specialist agents.
-Each agent is a small file in the `agents/` folder (Claude by default, or a local Ollama model),
-and specialists can read MongoDB (read-only).
+One web app: people sign in (Medha's `backend/`), see their requests and the collaboration
+workspace, and chat with the Assistant. The Assistant is an AI Judge that hands questions to
+specialist LLMs. Each LLM is a small file in the `agents/` folder (Claude by default, or a local
+Ollama model), and specialists can read MongoDB (read-only). Only signed-in users can chat.
 
 ## The files
 
@@ -13,10 +14,11 @@ agents/              ← THE AI: edit these to change it (see agents/README.md)
   judge.json         ← the Judge
   llms/              ← one file per LLM: add a file to add one, delete it to remove one
   settings.json      ← database address, reply style
-compose.yaml         ← runs it on the VM (dashboard + judge containers)
+backend/             ← the web app: sign-in, requests, collaboration; assistant.py connects the chat
+dashboard/           ← the website (index.html)
+judge/               ← the AI engine (nobody needs to edit this)
+Dockerfile, compose.yaml ← runs it all in one container (VM)
 run_local.ps1        ← runs it on a Windows PC instead (no Docker)
-dashboard/           ← the web UI (index.html, plus nginx.conf and Dockerfile)
-judge/               ← the engine (nobody needs to edit this)
 ```
 
 ## Change what the agents do
@@ -30,17 +32,16 @@ environment variable, never in a file.
 
 Full steps (and how to undo them) are in [VM_CHANGES.md](VM_CHANGES.md). In short:
 
-    cp .env.example .env                            # then put your Claude token in it
+    cp .env.example .env                            # then put your Claude token in it, and APP_PORT
     docker compose up -d --build                    # first time: a few minutes
-    docker compose exec judge python judge.py setup-demo   # sample grants, our "grants" database only
 
-Then from your PC: `ssh -L 8090:localhost:8090 cjw22003@uchcgrantai.cse.uconn.edu`
-and open http://localhost:8090. Other commands: `docker compose logs -f judge` (watch it work),
-`docker compose exec judge python judge.py chat` (terminal chat), `docker compose down` (stop).
+Then from your PC: `ssh -N -L 9090:127.0.0.1:<APP_PORT> <netid>@uchcgrantai.cse.uconn.edu`
+and open http://localhost:9090. Choose a sign-in card, then pick a demo person. Other commands:
+`docker compose logs -f app` (watch it work), `docker compose down` (stop).
 
 ## Run on a Windows PC
 
-Install the Ollama app and mongosh, start Ollama, then:
+Install mongosh and Claude Code (`claude auth login`), then:
 
     powershell -ExecutionPolicy Bypass -File run_local.ps1
 

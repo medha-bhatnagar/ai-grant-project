@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Grant Application Assistant: layout prototype v2 (sample data only, nothing is connected).
+  Grant Application Assistant: layout prototype v3 (with sign-in) (sample data only, nothing is connected).
   Run it: double-click this file, or `python3 -m http.server 8000` in this folder, then open http://localhost:8000
   Direct links: index.html#login, #pi, #staff
 -->
@@ -8,7 +8,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grant Application Assistant (layout prototype v2)</title>
+<title>Grant Application Assistant (layout prototype v3 (with sign-in))</title>
 <style>
 :root{--bg:#F4F6F9;--ink:#1B2430;--muted:#4A5565;--line:#D5DAE1;--navy:#14284B;--blue:#1F4E8C}
 *{box-sizing:border-box}
@@ -22,6 +22,8 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
 .btn{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:8px 14px;font:inherit;font-size:14px;min-height:40px;cursor:pointer}
 .btn:hover{background:#EEF3FA}.btn.p{background:var(--blue);color:#fff}.btn.p:hover{background:#18407A}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+.dropzone{display:block;width:100%;margin:16px 0 4px;border:2px dashed #8A94A3;border-radius:8px;padding:18px;text-align:center;background:#F8FAFC;cursor:pointer}
+.dropzone:hover,.dropzone.over{border-color:var(--blue);background:#EEF3FA}
 .tag{display:inline-block;border:1px solid #6B7686;border-radius:20px;padding:2px 10px;font-size:12px;color:#3A4350;background:#fff;white-space:nowrap}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #E6E9EE}
 .row.h{border:0;padding:0}
@@ -36,7 +38,7 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
 .badge{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:10px;background:var(--navy);color:#fff;font-size:12px;text-align:center}
 .shell{display:flex;gap:20px;align-items:flex-start}
 .main{flex:1;min-width:0}
-.dock{width:340px;flex:none}
+.dock{width:460px;flex:none}
 .pi-wrap.lay-B{display:flex;gap:20px;align-items:flex-start}
 .lay-B .tabs{flex-direction:column;width:190px;flex:none;border-bottom:0;margin:0}
 .lay-B .tab{text-align:left;border-bottom:0;border-left:3px solid transparent;margin:0}
@@ -79,33 +81,23 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
 @media (max-width:900px){.shell,.split{flex-direction:column;display:flex}.dock{width:100%}}
+.lc .card{flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px;margin:0}a.btn{display:inline-block;text-decoration:none;text-align:center;padding-top:10px}.err{color:#8A1C1C;background:#FDECEC;border:1px solid #E5B4B4;border-radius:8px;padding:10px 14px;margin:0}
 </style>
 </head>
 <body>
 
 <section id="view-login" class="login">
   <h1>Grant Application Assistant</h1>
-  <p>Layout prototype with sample data. Sign-in is not connected yet.</p>
+  <p>Sign in with your UConn account. You enter your password on UConn's own page, never here.</p>
+  <p class="err" id="login-err" role="alert" hidden></p>
   <div class="lc">
-    <form class="card" data-go="pi"><h2>Investigator sign in</h2>
-      <label for="pi-id">NetID</label><input class="inp" id="pi-id" autocomplete="off">
-      <label for="pi-pw">Password</label><input class="inp" id="pi-pw" type="password" autocomplete="off">
-      <button class="btn p" type="submit">Sign in as investigator</button>
-      <p class="sm">Opens: requests, deadlines, ready documents, collaboration, assistant</p></form>
-    <form class="card" data-go="staff"><h2>Staff sign in (SPS and Laura)</h2>
-      <label for="st-id">NetID</label><input class="inp" id="st-id" autocomplete="off">
-      <label for="st-pw">Password</label><input class="inp" id="st-pw" type="password" autocomplete="off">
-      <button class="btn p" type="submit">Sign in as staff</button>
-      <p class="sm">Opens: all requests, collaboration queue, all deadlines, assistant</p></form>
+    <div class="card"><h2>Investigator sign in</h2><p class="sm mut">Requests, deadlines, ready documents, collaboration, assistant</p><a class="btn p" href="/auth/login?as=pi">Continue to UConn sign-in</a></div>
+    <div class="card"><h2>Staff sign in (SPS and Laura)</h2><p class="sm mut">All requests, collaboration queue, all deadlines, assistant</p><a class="btn p" href="/auth/login?as=staff">Continue to UConn sign-in</a></div>
   </div>
 </section>
 
 <section id="view-pi" hidden>
-  <header class="top"><strong>Grant Application Assistant</strong><span>[PI name] · Investigator <button class="btn" type="button" data-go="login">Sign out</button></span></header>
-  <div class="opts"><strong>Prototype option (for feedback):</strong>
-    <label><input type="radio" name="lay" value="A" checked> A: Top tabs, chat on every tab</label>
-    <label><input type="radio" name="lay" value="B"> B: Side menu, chat on its own tab</label>
-    <label><input type="radio" name="lay" value="C"> C: Top tabs, chat button on every tab plus a chat tab</label></div>
+  <header class="top"><strong>Grant Application Assistant</strong><span><span id="pi-who">[PI name] · Investigator</span> <button class="btn" type="button" data-signout>Sign out</button></span></header>
   <div class="page"><div class="pi-wrap lay-A" id="pi-wrap">
     <div class="tabs" role="tablist" id="p-tabs" aria-label="Investigator sections"></div>
     <div class="shell"><div class="main">
@@ -121,7 +113,7 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
 </section>
 
 <section id="view-staff" hidden>
-  <header class="top"><strong>Grant Application Assistant</strong><span>[Staff name] · SPS / Laura <button class="btn" type="button" data-go="login">Sign out</button></span></header>
+  <header class="top"><strong>Grant Application Assistant</strong><span><span id="st-who">[Staff name] · SPS / Laura</span> <button class="btn" type="button" data-signout>Sign out</button></span></header>
   <div class="page"><div class="tabs" role="tablist" id="s-tabs" aria-label="Staff sections"></div>
     <div id="sn-req"><div class="shell">
       <div class="card" style="width:250px;flex:none"><h2>All requests</h2><div class="chips" id="s-chips"></div><div id="s-list"></div></div>
@@ -171,8 +163,8 @@ function drawTabs(list,items,cur,on){
 async function refreshTeams(){
   const roots=['#p-team','#s-team'].map(s=>$(s)).filter(Boolean);
   let team;
-  try{const r=await fetch('/api/team');team=(await r.json()).team||[]}
-  catch(e){roots.forEach(r=>r.innerHTML='<p class="mut sm">Team list unavailable (is the app running?).</p>');return}
+  try{const r=await fetch('/api/team',{credentials:'same-origin'});if(!r.ok)throw new Error();team=(await r.json()).team||[]}
+  catch(e){roots.forEach(r=>r.innerHTML='<p class="mut sm">Team list unavailable right now.</p>');return}
   const order={'PI':0,'Co-Investigator':1,'Collaborator':2},by={};
   team.forEach(m=>(by[m.request_id]=by[m.request_id]||[]).push(m));
   const html=Object.keys(by).sort().map(id=>`<h3 style="margin:8px 0 4px">${esc(id)}</h3>`+
@@ -195,25 +187,26 @@ function md(text){
 }
 
 /* ---------- chat (one component, placed differently per layout) ----------
-   Sends each message to the AI Judge (POST /api/chat) with what the user is looking at. */
+   Sends each message to the AI Judge (POST /api/chat, signed-in users only) with what the user is looking at. */
 function makeChat(id,greeting){
   const r=document.createElement('aside');r.id=id;r.className='card chat';
-  r.innerHTML=`<h2 style="margin:0">Assistant</h2><span class="tag about" style="align-self:flex-start"></span><div class="log" role="log" aria-live="polite"><div class="msg bot"></div></div><form class="send"><label class="sr" for="${id}-in">Message</label><input class="inp" id="${id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn p" type="submit">Send</button></form>`;
+  r.innerHTML=`<div class="row h"><h2 style="margin:0">Assistant</h2><label class="sm mut">Panel size <input class="chat-size" type="range" min="320" max="700" value="460" step="10"></label></div><span class="tag about" style="align-self:flex-start"></span><div class="log" role="log" aria-live="polite"><div class="msg bot"></div></div><form class="send"><label class="sr" for="${id}-in">Message</label><input class="inp" id="${id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn p" type="submit">Send</button></form>`;
   const log=$('.log',r),session=id+'-'+Math.random().toString(36).slice(2,10);let about='';
   log.children[0].textContent=greeting;
   r.setAbout=t=>{about=t;$('.about',r).textContent='About: '+t};
+  $('.chat-size',r).oninput=e=>{const dock=r.closest('.dock');if(dock)dock.style.width=e.target.value+'px'};
   const say=(cls,text)=>{const m=document.createElement('div');m.className='msg '+cls;m.textContent=text;log.append(m);log.scrollTop=log.scrollHeight;return m};
-  $('form',r).onsubmit=async e=>{e.preventDefault();const i=$('input',r),btn=$('button',r),v=i.value.trim();if(!v)return;
+  $('form',r).onsubmit=async e=>{e.preventDefault();const i=$('.send input',r),btn=$('.send button',r),v=i.value.trim();if(!v)return;
     say('me',v);i.value='';btn.disabled=true;
     const b=say('bot','Thinking... the assistant may take a minute.');
     try{
-      const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:session,message:v,context:about})});
+      const res=await fetch('/api/chat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:session,message:v,context:about})});
       const data=await res.json().catch(()=>({}));
       if(res.ok)b.innerHTML=md(data.reply);else b.textContent='The assistant is unavailable: '+(data.detail||'error '+res.status);
       const who=[...new Set((data.steps||[]).filter(x=>x.startsWith('judge uses ask_')).map(x=>x.split(' ')[2].slice(4)+' specialist'))];
       if(res.ok&&who.length){const s=document.createElement('div');s.className='sm mut';s.style.marginTop='6px';
         s.textContent='Consulted: '+who.join(', ')+((data.steps||[]).some(x=>x.includes('specialist uses'))?' · checked the database':'');b.append(s)}
-    }catch(err){b.textContent='Could not reach the assistant. Is the judge container running?'}
+    }catch(err){b.textContent='Could not reach the assistant. Is the app running?'}
     finally{btn.disabled=false;log.scrollTop=log.scrollHeight;refreshTeams()}};
   return r;
 }
@@ -250,6 +243,49 @@ function collab(root,role,reqId,after){
   const form=$('form',root);if(form)form.onsubmit=e=>{e.preventDefault();const v=$('input',form).value.trim();if(!v)return;c0.msgs.push([role==='PI'?'PI':'SPS','Today',v]);c0.turn=role==='PI'?'SPS':'PI';collab(root,role,reqId,after);after&&after()};
 }
 
+/* ---------- persistent collaboration workspace ---------- */
+async function liveCollaboration(root, role, reqId){
+  root.innerHTML='<p class="mut">Loading collaboration documents...</p>';
+  try{
+    const url=reqId?`/api/collaboration/documents?application_id=${encodeURIComponent(reqId)}`:'/api/collaboration/documents';
+    const response=await fetch(url,{credentials:'same-origin'});
+    if(!response.ok)throw new Error('Unable to load documents');
+    const docs=await response.json();
+    let selected=docs[0]?.id||null;
+    const render=async()=>{
+      const current=docs.find(d=>d.id===selected)||docs[0];
+      root.innerHTML=`<div class="row h"><div><h2>Collaboration workspace</h2><span class="sm mut">${docs.length} document${docs.length===1?'':'s'}</span></div>
+        <div class="chips"><button class="chip" data-live-filter="all">All</button><button class="chip" data-live-filter="mine">Needs my action</button><button class="chip" data-live-filter="waiting">Waiting on others</button><button class="chip" data-live-filter="done">Completed</button></div></div>
+        <div class="split"><div><input class="inp" id="live-search" placeholder="Search documents" autocomplete="off"><div id="live-docs" style="margin-top:10px"></div></div>
+        <div id="live-detail"><p class="mut">Select a document.</p></div></div>`;
+      const list=$('#live-docs',root), search=$('#live-search',root);
+      const drawList=()=>{const q=(search.value||'').toLowerCase();list.innerHTML=docs.filter(d=>!q||`${d.name} ${d.category} ${d.application_id}`.toLowerCase().includes(q)).map(d=>`<button class="item${d.id===selected?' sel':''}" data-live-id="${d.id}"><strong>${esc(d.name)}</strong><br><span class="sm mut">${esc(d.application_id)} · ${esc(d.category)}</span><br><span class="tag">${esc(d.status)} · v${d.current_version}</span></button>`).join('')||'<p class="mut">No matching documents.</p>'};
+      drawList();search.oninput=drawList;
+      const show=async()=>{
+        if(!current)return;
+        const r=await fetch(`/api/collaboration/documents/${current.id}`,{credentials:'same-origin'});if(!r.ok)throw new Error('Unable to load document');const d=await r.json();
+        $('#live-detail',root).innerHTML=`<div class="card" style="margin:0"><div class="row h"><div><h3>${esc(d.name)}</h3><span class="sm mut">${esc(d.application_id)} · ${esc(d.category)} · owner ${esc(d.owner_name||'')}</span></div><span class="tag">${esc(d.status)} · v${d.current_version}</span></div>
+          <div class="row"><span><strong>Versions</strong><br><span class="sm mut">${d.versions.length} preserved version${d.versions.length===1?'':'s'}</span></span></div>
+          <label class="dropzone" id="live-dropzone" for="live-upload">Drop a file here or click to choose one<input id="live-upload" type="file" hidden></label>
+          <div>${d.versions.map(v=>`<div class="row"><span>v${v.version} · ${esc(v.original_name)}<br><span class="sm mut">${esc(v.uploader_name)} · ${esc(v.uploaded_at)}</span></span><a class="btn" href="/api/collaboration/documents/${d.id}/versions/${v.version}/download">Download</a></div>`).join('')||'<p class="mut sm">No uploaded versions yet.</p>'}</div>
+          <h3 style="margin-top:14px">Comments</h3>${d.comments.map(c=>`<div class="m"><span class="tag">${esc(c.author_name)} · ${esc(c.author_role)}</span> <span class="sm mut">${esc(c.created_at)}</span><br>${esc(c.body)} ${c.resolved_at?'· Resolved':`<button class="btn" data-resolve="${c.id}">Resolve</button>`}</div>`).join('')||'<p class="mut sm">No comments yet.</p>'}
+          <form id="live-comment" class="send" style="margin-top:10px"><input class="inp" name="body" placeholder="Add a comment" maxlength="10000" required><button class="btn p">Comment</button></form>
+          <h3 style="margin-top:14px">Activity</h3>${d.activity.map(a=>`<div class="row"><span>${esc(a.event_type.replaceAll('_',' '))}</span><span class="sm mut">${esc(a.actor_name||'System')} · ${esc(a.created_at)}</span></div>`).join('')||'<p class="mut sm">No activity yet.</p>'}</div>`;
+        const upload=async f=>{if(!f)return;const form=new FormData();form.append('file',f);const response=await fetch(`/api/collaboration/documents/${d.id}/versions`,{method:'POST',body:form,credentials:'same-origin'});if(!response.ok){toast(await response.text());return}toast('Version uploaded');const fresh=await fetch(`/api/collaboration/documents?application_id=${encodeURIComponent(d.application_id)}`);docs.splice(0,docs.length,...await fresh.json());await render()};
+        const dropzone=$('#live-dropzone',root);
+        $('#live-upload',root).onchange=e=>upload(e.target.files[0]);
+        ['dragenter','dragover'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.add('over')}));
+        ['dragleave','drop'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.remove('over')}));
+        dropzone.addEventListener('drop',e=>upload(e.dataTransfer.files[0]));
+        $('#live-comment',root).onsubmit=async e=>{e.preventDefault();const response=await fetch(`/api/collaboration/documents/${d.id}/comments`,{method:'POST',body:new FormData(e.target),credentials:'same-origin'});if(!response.ok){toast(await response.text());return}await show()};
+        $$('[data-resolve]',root).forEach(b=>b.onclick=async()=>{const response=await fetch(`/api/collaboration/documents/${d.id}/comments/${b.dataset.resolve}/resolve`,{method:'POST',credentials:'same-origin'});if(response.ok)await show()});
+      };
+      $$('[data-live-id]',root).forEach(b=>b.onclick=async()=>{selected=+b.dataset.liveId;await render()});if(current)await show();
+    };
+    await render();
+  }catch(error){root.innerHTML=`<p class="err">${esc(error.message)}</p>`}
+}
+
 /* ---------- PI page ---------- */
 const pi={tab:'req',lay:'A',open:false};
 const piChat=makeChat('chat-pi','👋 Hi! How can I help you today? I can start a new application with you step by step, build your team, or check requirements, budgets, formatting and deadlines.');
@@ -264,19 +300,24 @@ function renderReq(){
 function renderReady(){
   $('#p-ready').innerHTML=REQ.map(r=>{const d=r.items.filter(i=>i.done),all=d.length===r.items.length&&['Incomplete','Changes requested'].includes(r.status);
    return `<div class="card"><div class="row h"><h3>${r.id}</h3><button class="btn p" data-send="${r.id}" ${all?'':'disabled'}>Send to SPS for review</button></div>
-   ${d.length?d.map(i=>`<div class="row"><span>${i.n}</span><span><button class="btn" data-toast="Viewing documents">View</button> <button class="btn" data-back="${r.id}|${i.n}">Move back</button></span></div>`).join(''):'<p class="mut sm">No completed documents yet. Mark them completed on the Requests tab.</p>'}</div>`}).join('')+'<button class="btn" data-toast="Upload">Upload a document</button>';
+   ${d.length?d.map(i=>`<div class="row"><span>${i.n}</span><span><button class="btn" data-toast="Viewing documents">View</button> <button class="btn" data-back="${r.id}|${i.n}">Move back</button></span></div>`).join(''):'<p class="mut sm">No completed documents yet. Mark them completed on the Requests tab.</p>'}</div>`}).join('')+`<div class="card"><h3>Upload a new document</h3><p class="sm mut">Choose an application, enter document details, then drop a file below.</p>
+   <div class="row"><select class="inp" id="new-doc-app">${REQ.map(r=>`<option value="${r.id}">${r.id}</option>`).join('')}</select><input class="inp" id="new-doc-name" placeholder="Document name" maxlength="200"><input class="inp" id="new-doc-category" placeholder="Category, e.g. IRB" maxlength="80"></div>
+   <label class="dropzone" id="new-doc-drop">Drop a new document here or click to choose one<input id="new-doc-file" type="file" hidden></label><p class="sm mut" id="new-doc-status"></p></div>`;
+  const drop=$('#new-doc-drop'), input=$('#new-doc-file');
+  const submit=async file=>{if(!file)return;const form=new FormData();form.append('application_id',$('#new-doc-app').value);form.append('name',$('#new-doc-name').value.trim()||file.name);form.append('category',$('#new-doc-category').value.trim()||'Other');form.append('file',file);$('#new-doc-status').textContent='Uploading...';const response=await fetch('/api/collaboration/documents',{method:'POST',body:form,credentials:'same-origin'});if(!response.ok){$('#new-doc-status').textContent=await response.text();return}$('#new-doc-status').textContent='Uploaded successfully. Open Collaboration to view it.';toast('Document uploaded')};
+  input.onchange=e=>submit(e.target.files[0]);
+  ['dragenter','dragover'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.add('over')}));
+  ['dragleave','drop'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.remove('over')}));
+  drop.addEventListener('drop',e=>submit(e.dataTransfer.files[0]));
 }
 function drawPI(focus){
   const items=[['req','Requests',left()],['dl','Deadlines'],['ready','Ready to submit',doneN()],['col','Collaboration',myCol('PI')]];
-  if(pi.lay!=='A')items.push(['chat','Assistant']);
-  if(pi.tab==='chat'&&pi.lay==='A')pi.tab='req';
+  if(pi.tab==='chat')pi.tab='req';
   drawTabs($('#p-tabs'),items,pi.tab,id=>{pi.tab=id;drawPI()});
   ['req','dl','ready','col','chat'].forEach(id=>$('#pn-'+id).hidden=id!==pi.tab);
   $('#pi-wrap').className='pi-wrap lay-'+pi.lay;
-  const inDrawer=pi.lay==='C'&&pi.open&&pi.tab!=='chat';
-  (pi.lay==='A'?$('#dock'):inDrawer?$('#drawer'):$('#chat-slot')).append(piChat);
-  $('#drawer').hidden=!inDrawer;$('#fab').hidden=!(pi.lay==='C'&&pi.tab!=='chat');
-  $('#fab').textContent=pi.open?'Close assistant':'Ask the assistant';
+  $('#dock').append(piChat);
+  $('#drawer').hidden=true;$('#fab').hidden=true;
   piChat.setAbout((items.find(i=>i[0]===pi.tab)||[])[1]||'');
   if(focus)$('.tab[aria-selected=true]',$('#p-tabs')).focus();
 }
@@ -285,10 +326,7 @@ $('#p-req').onchange=e=>{const c=e.target.closest('[data-r]');if(!c)return;REQ.f
 $('#p-ready').onclick=e=>{const s=e.target.closest('[data-send]'),b=e.target.closest('[data-back]');
   if(s){REQ.find(r=>r.id===s.dataset.send).status='In review by SPS';refreshPI();syncStaff();toast('Sent to SPS (sample data only)')}
   if(b){const[id,n]=b.dataset.back.split('|');REQ.find(r=>r.id===id).items.find(i=>i.n===n).done=false;refreshPI();syncStaff()}};
-$$('input[name=lay]').forEach(r=>r.onchange=()=>{pi.lay=r.value;pi.open=false;drawPI()});
-$('#fab').onclick=()=>{pi.open=!pi.open;drawPI()};
-addEventListener('keydown',e=>{if(e.key==='Escape'&&pi.open){pi.open=false;drawPI()}});
-const piCol=()=>collab($('#p-col'),'PI',null,()=>drawPI());
+const piCol=()=>liveCollaboration($('#p-col'),'PI',null);
 renderReq();renderReady();cal($('#p-cal'));piCol();drawPI();
 
 /* ---------- Staff page (SPS and Laura) ---------- */
@@ -304,24 +342,38 @@ function renderStaff(){
   const p=$('#s-panel'),nxt=DL.filter(x=>x.r===r.id&&x.t==='sub')[0];
   if(st.inner==='ov')p.innerHTML=`<div class="card"><h2>Grant info</h2><div class="info"><div>Announcement number<br><strong>${r.id}</strong></div><div>Funding source<br><strong>${r.src}</strong></div><div>Investigator<br><strong>${r.pi}</strong></div><div>Department<br><strong>[Department]</strong></div><div>Submission deadline<br><strong>${nxt?fmt(nxt.d):'[Date]'}</strong></div><div>Budget total<br><strong>[Amount]</strong></div></div><p class="sm mut" style="margin:12px 0 0">${r.items.filter(i=>i.done).length} of ${r.items.length} requirements submitted</p></div>`;
   if(st.inner==='docs')p.innerHTML=`<div class="card"><h2>Documents</h2>${r.items.map(i=>`<div class="row"><span>${i.n}<br><span class="sm mut">${i.done?'Submitted [date]':'Not yet submitted'}</span></span><span class="tag">${i.done?'Submitted':'Missing'}</span><button class="btn" data-toast="Viewing documents">View</button></div>`).join('')}</div>`;
-  if(st.inner==='col'){p.innerHTML='<div class="card" id="s-col1"></div>';collab($('#s-col1'),'SPS',r.id,renderStaff)}
+  if(st.inner==='col'){p.innerHTML='<div class="card" id="s-col1"></div>';liveCollaboration($('#s-col1'),'SPS',r.id)}
   if(st.inner==='act')p.innerHTML=`<div class="card"><h2>Activity</h2>${r.act.map(a=>`<div class="row">${esc(a)}</div>`).join('')}</div>`;
   sChat.setAbout(r.id+' ('+r.pi+')');
   drawTabs($('#s-tabs'),[['req','Requests',REQ.filter(x=>x.status==='In review by SPS').length],['col','Collaboration',myCol('SPS')],['dl','Deadlines']],st.top,id=>{st.top=id;renderStaff()});
   ['req','col','dl'].forEach(id=>$('#sn-'+id).hidden=id!==st.top);
 }
-function syncStaff(){renderStaff();collab($('#s-colall'),'SPS',null,renderStaff)}
+function syncStaff(){renderStaff();liveCollaboration($('#s-colall'),'SPS',null)}
 $('#s-chips').onclick=e=>{const c=e.target.closest('[data-s]');if(c){st.filt=c.dataset.s;renderStaff()}};
 $('#s-list').onclick=e=>{const b=e.target.closest('[data-i]');if(b){st.sel=+b.dataset.i;renderStaff()}};
 function setStatus(s){const r=REQ[st.sel];r.status=s;r.act.unshift(new Date().toLocaleDateString()+' · [Staff name]: '+s);syncStaff();refreshPI();toast(s+' (sample data only)')}
 $('#s-ok').onclick=()=>setStatus('Approved');$('#s-chg').onclick=()=>setStatus('Changes requested');
-cal($('#s-cal'));syncStaff();refreshTeams();
+cal($('#s-cal'));syncStaff();
 
-/* ---------- navigation ---------- */
-function route(){const v=(location.hash||'#login').slice(1),n=['pi','staff'].includes(v)?v:'login';['login','pi','staff'].forEach(x=>$('#view-'+x).hidden=x!==n);scrollTo(0,0)}
-addEventListener('hashchange',route);route();
-document.addEventListener('click',e=>{const g=e.target.closest('button[data-go]');if(g)location.hash='#'+g.dataset.go;const t=e.target.closest('[data-toast]');if(t)toast(t.dataset.toast+' is not connected yet (layout only)')});
-$$('form[data-go]').forEach(f=>f.onsubmit=e=>{e.preventDefault();location.hash='#'+f.dataset.go});
+/* ---------- sign-in state and navigation ---------- */
+let ME=null;
+const ERR={not_allowed:'Your account is not on the approved list for this app. Ask your team to add you.',wrong_entrance:'Your account is a different type. Use the other sign-in card.',failed:'Sign-in did not complete. Please try again.'};
+function route(){
+  const v=(location.hash||'#login').slice(1);
+  let n=['pi','staff'].includes(v)?v:'login';
+  const home=ME&&(ME.role==='sps'?'staff':'pi');
+  if(!ME)n='login';else if(n!==home)n=home;   // convenience only: the backend enforces roles
+  if(location.hash!=='#'+n)history.replaceState(null,'','#'+n);
+  ['login','pi','staff'].forEach(x=>$('#view-'+x).hidden=x!==n);
+  if(ME){$('#pi-who').textContent=ME.name+' · Investigator';$('#st-who').textContent=ME.name+' · SPS / Laura'}
+  const e=new URLSearchParams(location.search).get('login_error'),box=$('#login-err');
+  box.hidden=!(n==='login'&&e&&ERR[e]);box.textContent=ERR[e]||'';
+  scrollTo(0,0);
+}
+async function boot(){try{const r=await fetch('/api/me',{credentials:'same-origin'});ME=r.ok?await r.json():null}catch(e){ME=null}route();if(ME)refreshTeams()}
+async function signOut(){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(e){}ME=null;history.replaceState(null,'','/#login');route()}
+addEventListener('hashchange',route);boot();
+document.addEventListener('click',e=>{if(e.target.closest('[data-signout]'))signOut();const t=e.target.closest('[data-toast]');if(t)toast(t.dataset.toast+' is not connected yet (layout only)')});
 </script>
 </body>
 </html>

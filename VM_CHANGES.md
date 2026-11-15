@@ -90,20 +90,50 @@ agents/README.md         how to add, remove or change an LLM
   (add, remove, typo), 19 tests pass, and a live Claude question was answered correctly.
 - To undo: `git revert` this commit (it brings back `agents.json`).
 
-## Running it on the VM (when ready)
+## Step 6: merged with Medha's signed-in app (team main, Nov 15)
+
+Medha added a web app with sign-in (`backend/`) and changed the dashboard to use it. Both changed
+the same 4 files, so they were merged by hand:
+
+- **One app, one container.** Her backend is now the server. The chat was added to it in the new
+  file `backend/assistant.py` (`POST /api/chat`, `GET /api/team`). **Both need a signed-in user**
+  (they return 401 otherwise), and each user has their own chat memory.
+- `dashboard/index.html`: her v3 page (sign-in, live collaboration workspace, upload drop zones,
+  panel-size slider), plus our real chat, short formatting, Grant teams cards and SAMPLE-004/005.
+- `Dockerfile` (root): one image with her app plus the Judge (mongosh, Claude Code 2.1.319, agents/).
+  It runs as a normal user, not root. `compose.yaml`: one service `app`, project name
+  `grant-assistant`, port `APP_PORT` (default 8000) on 127.0.0.1 only, plus the Claude token and
+  `MONGO_DB` from `.env`. `.env.example` has both her settings and ours.
+- Removed `dashboard/Dockerfile`, `dashboard/nginx.conf` and `judge/Dockerfile` (replaced by the one image).
+- `run_local.ps1` starts her app (with the chat) on http://localhost:8080.
+- **Bugs found in her code and fixed:**
+  - `backend/collaboration.py` imported `files.main` (her local folder name), so the app couldn't
+    start from the repo. It now uses the package it's in.
+  - `backend/config.py` looked for the demo user list one folder too high, so no one could sign in
+    unless the path was set by hand. It now looks in `backend/`, as its own comment says. The
+    default website folder is now `dashboard/`.
+  - Her `Dockerfile` copied a `files/` folder that doesn't exist. Replaced (see above).
+  - The chat sent the panel-size slider's value instead of the typed message. Fixed.
+  - `.dockerignore` didn't exclude `.env`, so the Claude token could end up inside the image. Added.
+- Tested locally: 19 tests pass. Chat and team are refused without sign-in (401). After demo
+  sign-in, her collaboration workspace loads (1 document), Grant teams shows 6 people, and the chat
+  answered "Is SAMPLE-003 within the budget limit?" correctly via the budget specialist.
+- Not tested yet: the Docker build (no Docker on the PC).
+
+## Running it on the VM
 
 Run these in your own folder (`~/Team44`), never in a teammate's folder.
 
-1. Copy the zip from the PC (in **PowerShell on the PC**):
+1. **Stop the old version first** (it used the name colin-judge and port 8090):
+   `cd ~/Team44/ai-grant-project && docker compose -p colin-judge down`
+2. Copy the zip from the PC (in **PowerShell on the PC**):
    `scp ai-grant-judge-code.zip cjw22003@uchcgrantai.cse.uconn.edu:~/Team44/`
-2. On the VM: `cd ~/Team44 && unzip ai-grant-judge-code.zip && cd ai-grant-project`
-3. Check that the ports are free: `ss -ltn | grep -E ':8090|:8010'` (no output means free).
-4. `cp .env.example .env`, then make a Claude token **on the PC** with `claude setup-token` and
-   paste it into `.env` with `nano .env`.
-5. `docker compose up -d --build`, then `docker compose exec judge python judge.py setup-demo`.
-6. From the PC: `ssh -L 8090:localhost:8090 cjw22003@uchcgrantai.cse.uconn.edu`, then open
-   http://localhost:8090.
+3. On the VM: `cd ~/Team44 && unzip -o ai-grant-judge-code.zip && cd ai-grant-project`
+4. Add the new settings to your existing `.env` (it keeps your Claude token):
+   `printf 'APP_PORT=8090\nPUBLIC_URL=http://localhost:9090\n' >> .env`
+5. `docker compose up -d --build`
+6. From the PC: `ssh -N -L 9090:127.0.0.1:8090 cjw22003@uchcgrantai.cse.uconn.edu`, then open
+   http://localhost:9090, choose a sign-in card, and pick a demo person.
 
-**To undo on the VM:** `docker compose down` (removes only the colin-judge containers), then
-`mongosh grants --eval "db.dropDatabase()"` (removes only our `grants` database), then delete
-`~/Team44/ai-grant-project`.
+**To undo on the VM:** `docker compose down` (removes only the grant-assistant container), then
+delete `~/Team44/ai-grant-project`.

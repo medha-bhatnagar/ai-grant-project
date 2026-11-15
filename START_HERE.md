@@ -35,7 +35,9 @@ into a database on **your own PC** only.
 
     powershell -ExecutionPolicy Bypass -File run_local.ps1
 
-Open **http://localhost:8080** and use the Assistant chat. Press **Ctrl+C** in PowerShell to stop.
+Open **http://localhost:8080**, click **Continue to UConn sign-in** on the Investigator card, and
+pick **Demo PI One** (demo sign-in, no password). Then use the Assistant chat. Press **Ctrl+C** in
+PowerShell to stop.
 
 ## Try saying
 
@@ -49,5 +51,6 @@ Open **http://localhost:8080** and use the Assistant chat. Press **Ctrl+C** in P
 - `agents/`: the Judge and one file per LLM (see `agents/README.md` to add, remove or change one)
 - `people.json`: the people the assistant can add to a grant team
 - `dashboard/index.html`: the website
+- `backend/`: the web app (sign-in, requests, collaboration)
 - `judge/`: the code that runs it (no need to edit)
 - `README.md`: more detail
