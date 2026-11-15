@@ -1,8 +1,34 @@
 services:
-  dashboard:
+  app:
     build:
-      context: ./dashboard
+      context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "8000:8000"
+    environment:
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-demo}
+      ALLOW_DEMO: ${ALLOW_DEMO:-1}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8000}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-only-change-me}
+      DB_PATH: /app/data/app.db
+      USERS_CSV: /app/backend/allowed_users.demo.csv
+      FRONTEND_DIR: /app/dashboard
+      STORAGE_DIR: /app/data/uploads
+      SESSION_HOURS: ${SESSION_HOURS:-8}
+      CAS_SERVER_URL: ${CAS_SERVER_URL:-}
+      OIDC_METADATA_URL: ${OIDC_METADATA_URL:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_USER_CLAIM: ${OIDC_USER_CLAIM:-preferred_username}
+    volumes:
+      - app_data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  app_data:

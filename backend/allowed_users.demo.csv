@@ -1,0 +1,5 @@
+login_id,email,display_name,role,active
+pi.demo1,pi.demo1@example.com,Demo PI One,pi,1
+pi.demo2,pi.demo2@example.com,Demo PI Two,pi,1
+sps.demo1,sps.demo1@example.com,Demo SPS Staff,sps,1
+laura.demo,laura.demo@example.com,Demo Laura,sps,1
