@@ -137,3 +137,28 @@ Run these in your own folder (`~/Team44`), never in a teammate's folder.
 
 **To undo on the VM:** `docker compose down` (removes only the grant-assistant container), then
 delete `~/Team44/ai-grant-project`.
+## Step 7: the Monday demo (collaboration docket, uploads, CV emails, training)
+
+The professor's Demo Plan (his email and `Overview.pptx`). The demo script is in `DEMO_MONDAY.md`.
+
+- New `demo/`: his `affiliation_sample1.csv`, `affiliation_sample.csv` and `compliance.csv` (copied
+  as is; no PDFs in the repo).
+- New `judge/docket.py`: the docket store. It's **one JSON file plus the uploaded files** in
+  `data/docket` (`DOCKET_DIR`), with no database. It handles name matching ("Dong-Guk Shin" =
+  "Dong Shin"), training lookup, CV-request drafts, and a demo outbox (nothing is sent), and only
+  accepts .pdf, .doc and .docx files.
+- `judge/judge.py`: new tools `find_affiliation`, `fill_docket_panel` (the Filler), `docket_status`,
+  `check_training`, `draft_cv_requests` and `send_emails`. **Agent files now list their tools by
+  name** (`"tools": [...]`), and an unknown tool name gives a clear error.
+- New LLM files `agents/llms/db_agent.json` and `agents/llms/compliance_agent.json`.
+  `agents/judge.json` gets the docket tools and a "docket" section, including "never send emails
+  without a yes".
+- New `backend/docket.py`: `GET /api/docket`, upload, download, and reset (SPS only). All of it
+  needs sign-in. `backend/assistant.py` tells the AI who is signed in, so emails are signed correctly.
+- `dashboard/index.html`: a new **Docket** tab (first tab, PI and staff) with a drop zone per
+  investigator, CV and training tags, and the Outbox. On the staff side the chat moves next to it.
+- `Dockerfile` copies `demo/`.
+- Tested: 21 tests pass. Full browser run as Demo SPS Staff: docket created (db_agent); 3 real CVs
+  uploaded (a .exe was refused and a signed-out request got 401); "3 of 5" CV status; 2 emails
+  drafted, sent only after "yes", and shown in the Outbox; training checked (compliance_agent).
+- To undo: `git revert` this commit.

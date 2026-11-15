@@ -469,6 +469,7 @@ def ask_specialist(name, question, on_event=print, user_message=""):
         instructions.append(database_layout())
     if spec.get("library"):
         tools.update(LIBRARY_TOOLS)
+    tools.update(_named_tools(spec))
     return Final(Agent(f"{name} specialist", spec["model"], instructions, tools, on_event).ask(question))
 
 
@@ -687,9 +688,77 @@ TEAM_TOOLS = {
 }
 
 
+# ============================================================================ docket (Monday demo)
+# The collaboration docket from the professor's Demo Plan: see docket.py. Agents get these tools by
+# listing their names under "tools" in their file in agents/ (e.g. "tools": ["find_affiliation"]).
+
+import docket  # noqa: E402  (next to this file)
+
+
+def _docket_json(value, missing="No docket yet. Ask me to create one, e.g. 'create the docket for RFA-HG-27-007 "
+                                  "with investigators A, B and C'."):
+    return missing if value is None else json.dumps(value, ensure_ascii=False)
+
+
+def _brief_status(docket_id):
+    """A docket's status without the long fields, for the LLMs to read."""
+    s = docket.status(docket_id)
+    if not s:
+        return None
+    return {"docket": s["id"], "investigators": [
+        {"name": p["name"], "affiliation": p["affiliation"] or "(not in the affiliation file)",
+         "email": p["email"] or "(none on file)", "cv_submitted": p["cv"],
+         "documents": [f"{d['doc_type']}: {d['original_name']}" for d in p["documents"]],
+         "research_security_training": p["training"]} for p in s["investigators"]],
+        "emails_in_outbox": [f"to {m['to_name']}: {m['subject']}" for m in s["outbox"]]}
+
+
+DOCKET_TOOLS = {
+    "find_affiliation": ('look up one investigator\'s affiliation, email and phone in the affiliation file. '
+                         'args: {"name": str}', lambda args: json.dumps(docket.find_affiliation(args.get("name", "")))),
+    "fill_docket_panel": ('(the Filler agent) create the docket for an application and fill the portal\'s docket '
+                          'panel with its investigators and their affiliations. args: {"docket_id": "e.g. '
+                          'RFA-HG-27-007", "names": ["investigator names exactly as the user gave them"]}',
+                          lambda args: _docket_json(docket.create_docket(args.get("docket_id", ""),
+                                                                         list(args.get("names") or [])))),
+    "docket_status": ('who is on a docket, their affiliation, which documents each has uploaded (cv_submitted), '
+                      'their research security training, and emails sent. args: {"docket_id": str or "" for the newest}',
+                      lambda args: _docket_json(_brief_status(args.get("docket_id") or None))),
+    "check_training": ('research security training status (yes / no / no record) of every investigator on a '
+                       'docket, from the compliance file. args: {"docket_id": str or ""}',
+                       lambda args: _docket_json(None if not (s := _brief_status(args.get("docket_id") or None))
+                                                 else {"docket": s["docket"], "training": {
+                                                     p["name"]: p["research_security_training"]
+                                                     for p in s["investigators"]}})),
+    "draft_cv_requests": ('draft the standard CV-request email for every investigator on a docket who has NOT '
+                          'uploaded a CV. Does not send anything. args: {"docket_id": str or "", "sender": '
+                          '"the signed-in user\'s name"}',
+                          lambda args: _docket_json(docket.draft_cv_requests(args.get("docket_id") or None,
+                                                                             args.get("sender", "")))),
+    "send_emails": ('send emails, ONLY after the user said yes to the drafts you showed them. They go to the '
+                    'portal\'s demo Outbox (nothing leaves the app). args: {"docket_id": str, "sender": str, '
+                    '"emails": [{"to_name": str, "to_email": str, "subject": str, "body": str}]}',
+                    lambda args: _docket_json(
+                        [f"Outbox: to {m['to_name']} <{m['to_email'] or 'no address on file'}>"
+                         for m in docket.send_emails(args.get("docket_id") or None, list(args.get("emails") or []),
+                                                     args.get("sender", ""))])),
+}
+
+# Every tool an agent file can ask for by name in its "tools" list.
+NAMED_TOOLS = {**TEAM_TOOLS, **LIBRARY_TOOLS, **DOCKET_TOOLS}
+
+
+def _named_tools(spec):
+    unknown = [t for t in spec.get("tools", []) if t not in NAMED_TOOLS]
+    if unknown:
+        raise SystemExit(f"Unknown tool name(s) {unknown} in an agent file. Known tools: {sorted(NAMED_TOOLS)}")
+    return {t: NAMED_TOOLS[t] for t in spec.get("tools", [])}
+
+
 class Judge:
     """The agent the user talks to. It remembers the conversation and has one ask_<name> tool
-    per LLM in agents/llms/, plus the team tools (find_person, list_team, add_team_member)."""
+    per LLM in agents/llms/, plus the team tools (find_person, list_team, add_team_member) and
+    any tools named in agents/judge.json "tools"."""
 
     def __init__(self, on_event=print):
         self.on_event = on_event   # where progress steps go; the server swaps it per request
@@ -700,7 +769,9 @@ class Judge:
                                                                         self._event, self.message))
                  for name, spec in agents["specialists"].items()}
         tools.update(TEAM_TOOLS)
-        instructions = (agents["judge"]["instructions"] + agents["judge"].get("guided_flow", [])
+        tools.update(_named_tools(agents["judge"]))
+        instructions = (agents["judge"]["instructions"] + agents["judge"].get("docket", [])
+                        + agents["judge"].get("guided_flow", [])
                         + agents["settings"].get("reply_style", []))
         self.agent = Agent("judge", agents["judge"]["model"], instructions, tools, self._event)
 

@@ -168,5 +168,36 @@ def test_llms_are_added_and_removed_by_file(tmp_path, monkeypatch):
         judge.load_agents()
 
 
+def test_docket_demo_flow(tmp_path, monkeypatch):
+    import docket
+    monkeypatch.setattr(docket, "DOCKET_DIR", tmp_path)
+    team = ["George Liu", "James Slaughter", "Chih-Ming Tsai", "C. Creech", "Issac Thomasen"]
+    s = docket.create_docket("RFA-HG-27-007", team)
+    assert [p["affiliation"] != "" for p in s["investigators"]] == [True, True, True, False, False]
+    for who in ("Liu", "Slaughter", "Creech"):                     # 3 of 5 upload their CV
+        docket.add_document("rfa-hg-27-007", who, docket.CV, f"{who}_CV.pdf", b"%PDF-1.4")
+    drafts = docket.draft_cv_requests(None, "Demo SPS Staff")
+    assert [d["to_name"] for d in drafts] == ["Chih-Ming Tsai", "Issac Thomasen"]
+    assert "Demo SPS Staff" in drafts[0]["body"]
+    docket.send_emails("RFA-HG-27-007", drafts, "Demo SPS Staff")
+    assert len(docket.status()["outbox"]) == 2                      # in the outbox, nothing sent
+    with pytest.raises(ValueError):
+        docket.add_document("RFA-HG-27-007", "Liu", docket.CV, "virus.exe", b"x")
+    with pytest.raises(ValueError):
+        docket.add_document("RFA-HG-27-007", "Someone Else", docket.CV, "a.pdf", b"x")
+    slide = docket.create_docket("RFA-2", ["David Rowe", "Peter Maye", "Dong-Guk Shin"])
+    assert {p["name"]: p["training"] for p in slide["investigators"]} == {
+        "David Rowe": "yes", "Peter Maye": "yes", "Dong Shin": "no"}
+
+
+def test_agents_get_the_tools_their_file_names():
+    agents = judge.load_agents()
+    assert agents["specialists"]["db_agent"]["tools"] == ["find_affiliation", "fill_docket_panel"]
+    tools = judge.Judge(on_event=lambda t: None).agent.tools
+    assert {"ask_db_agent", "ask_compliance_agent", "draft_cv_requests", "send_emails"} <= set(tools)
+    with pytest.raises(SystemExit, match="Unknown tool"):
+        judge._named_tools({"tools": ["delete_everything"]})
+
+
 def test_judge_has_the_team_tools():
     assert {"find_person", "list_team", "add_team_member"} <= set(judge.Judge(on_event=lambda t: None).agent.tools)
