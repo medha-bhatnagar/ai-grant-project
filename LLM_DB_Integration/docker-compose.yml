@@ -1,0 +1,30 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-atlas-local:preview
+    hostname: mongodb                # fixed name, so the hostname problem can't happen again
+    ports:
+      - "27017:27017"
+    volumes:
+      - grant_data:/data/db
+      - grant_config:/data/configdb  # both folders saved this time
+
+  app:
+    build: .
+    depends_on:
+      - mongodb
+    working_dir: /app
+    volumes:
+      - .:/app                       # your project folder appears as /app
+      - hf_cache:/root/.cache/huggingface   # models download once, not on every run
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/?directConnection=true
+      OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+
+volumes:
+  grant_data:
+  grant_config:
+  hf_cache:

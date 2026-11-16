@@ -1,0 +1,62 @@
+[
+  {
+    "time": "2026-11-15T21:07:46",
+    "question": "what are the current grants announced right now?",
+    "answer": "The current grants announced right now are:\n\n* PAR-21-084 (as mentioned in Document1.pdf)\n\nHowever, I must note that the question \"what are the current grants announced right now\" is not explicitly answered in the excerpts. The text in Document1.pdf only mentions that it is a \"Reissue of PAR-21-084\". \n\nIt's also worth noting that Document2.pdf does not provide any information about current grants, and only mentions that it is a work in progress and directs users to Grants.gov for more information.",
+    "sources": [
+      "Announcements/Document2.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/Document2.pdf",
+      "Announcements/Document1.pdf"
+    ]
+  },
+  {
+    "time": "2026-11-15T21:08:09",
+    "question": "what is PAR-21-084 requesting?",
+    "answer": "I cannot verify the content of the request in PAR-21-084. Is there anything else I can help you with?",
+    "sources": [
+      "Announcements/Document1.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/RFA-HG-27-007.docx"
+    ]
+  },
+  {
+    "time": "2026-11-15T21:08:36",
+    "question": "What are the general structure of past grant submissions",
+    "answer": "Based on the provided excerpts, here are the answers to the question:\n\n1. The applicant can access the Summary Statement (written critique) via the eRA Commons, after the peer review is completed. (Document 1)\n2. The NIH Grants Policy Statement provides information regarding the disposition of applications, specifically in Section 2.4.4. (Document 1)\n3. The general structure of past grant submissions is not explicitly stated in the provided excerpts.\n\nNote: The provided excerpts do not contain information about the general structure of past grant submissions.",
+    "sources": [
+      "Announcements/Document1.pdf",
+      "Announcements/RFA-HG-27-007.docx",
+      "Announcements/Document1.pdf",
+      "Announcements/RFA-HG-27-007.docx",
+      "Announcements/RFA-HG-27-007.docx"
+    ]
+  },
+  {
+    "time": "2026-11-15T21:14:12",
+    "question": "what have we talked about",
+    "answer": "We have talked about the following:\n\n1. The general structure of past grant submissions: (Answer not in the excerpts) I couldn't find any information about the general structure of past grant submissions in the provided excerpts.\n2. Current grants announced: (Answer not in the excerpts) I couldn't find any information about current grants announced in the provided excerpts.\n3. PAR-21-084: (Answer not in the excerpts) I couldn't find any information about PAR-21-084 in the provided excerpts.\n4. PAR-21-084 requesting: (Answer not in the excerpts) I couldn't find any information about what PAR-21-084 is requesting in the provided excerpts.\n5. The content of a past grant submission (Personal Statement): Document1.pdf",
+    "sources": [
+      "Past_Submissions/Document1.pdf",
+      "Announcements/Document2.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/Document1.pdf"
+    ]
+  },
+  {
+    "time": "2026-11-15T21:14:44",
+    "question": "what documents do I need to gether",
+    "answer": "Based on the provided excerpts, here are the documents you need to gather:\n\n1. **SAM.gov registration**: You need to register in SAM.gov (System for Award Management) to follow all applicable nondiscrimination laws and submit an Assurance of Compliance (HHS-690).\n2. **Data Management and Sharing Plan**: If your research generates scientific data, you need to comply with the Data Management and Sharing Plan instructions.\n3. **Application Submission Contacts**: You need to contact the Application Submission Contacts listed in Section VII if you need assistance with application submission.\n\nNote: The excerpts do not specify any additional documents or materials, other than what is mentioned above.",
+    "sources": [
+      "Announcements/Document2.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/Document1.pdf",
+      "Announcements/RFA-HG-27-007.docx",
+      "Announcements/Document1.pdf"
+    ]
+  }
+]
