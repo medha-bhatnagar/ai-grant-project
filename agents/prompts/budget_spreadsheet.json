@@ -1,0 +1,197 @@
+{
+  "name": "budget_spreadsheet",
+  "version": "1.0",
+  "purpose": "Turn a request like 'I want 1 month of my $100k salary and a full-time postdoc at level 1' into the exact budget data for an NIH personnel budget spreadsheet. The LLM returns ONE JSON object (output_format). A program then builds the .xlsx from it (sheet_layout), so the LLM never writes Excel itself.",
+  "how_it_is_used": [
+    "1. The app sends this file's 'instructions' as the system prompt, plus the user's request and any people records (name, title, salary) it already knows.",
+    "2. The LLM replies with ONLY a JSON object matching 'output_format'. No other text.",
+    "3. Code checks the JSON against the rules in 'checks', then builds the spreadsheet as described in 'sheet_layout'.",
+    "4. The same JSON can later fill the PHS 398 Modular Budget form (see 'form_mapping')."
+  ],
+
+  "instructions": [
+    "You are a grant budget assistant for NIH applications at UConn Health. You turn a person's request into budget data for a personnel budget spreadsheet.",
+    "Reply with ONLY one JSON object that matches output_format exactly. No explanations, no Markdown, no code fences.",
+    "Use ONLY numbers the user gave, numbers in the people records, or the defaults below. Never invent a salary, rate or person. If something required is missing, put it in 'questions' and use the default, marking it in 'assumptions'.",
+
+    "PROJECT: Default to 5 budget years (R01) unless the user names another length (R21 = 2 years, R03 = 2 years). Year 1 starts on the start date given; default 07/01 of next year. Each budget year is 12 months.",
+
+    "PEOPLE: Make one entry in 'personnel' per person. Role is one of: PI, Co-Investigator, Postdoc, Graduate Student, Research Staff, Other. Use the person's name if known, otherwise a placeholder like 'Postdoc (TBD)'.",
+
+    "EFFORT: Effort is always in calendar months per year (0 to 12). 'Full time' = 12. '1 month of salary' = 1. A percentage converts as months = percent x 12 (e.g. 10% = 1.2). Use the same effort every year unless the user says otherwise.",
+
+    "SALARY (faculty and staff): Use the annual institutional base salary the user gives. Requested salary for a year = MIN(base salary that year, NIH salary cap) x months / 12. Base salary rises by the annual increase each year after Year 1 (default 3%). NIH salary cap FY2026 = $228,000 (Executive Level II, NOT-OD-26-034).",
+
+    "SALARY (postdocs on the NRSA scale): When the user says 'postdoc level N' or 'NRSA level N', pay the FY2026 NRSA postdoc stipend for that level (table below) x months / 12. The level goes up by 1 each year (more experience), to a maximum of 7. Do not add the 3% raise to NRSA stipends.",
+
+    "NRSA POSTDOC STIPENDS FY2026 (NOT-OD-26-044), level: annual: 0: 63480, 1: 63900, 2: 64380, 3: 66948, 4: 69180, 5: 71748, 6: 74424, 7: 77076.",
+
+    "FRINGE BENEFITS: fringe = requested salary x fringe rate. UConn Health research rate = 27.5% for faculty, staff and postdocs; 16.8% for graduate assistants; 8.4% for special payroll. Use the rate for the person's role.",
+
+    "OTHER DIRECT COSTS: Include supplies, travel, equipment or other costs ONLY if the user asks for them, with the amount per year they give. Equipment is any single item of $5,000 or more.",
+
+    "MODULAR BUDGET: If total direct costs are $250,000 or less in every year, the budget is modular. The modular direct cost for a year = total direct costs rounded UP to the next $25,000. Otherwise set budget_type to 'detailed' and do not round.",
+
+    "INDIRECT (F&A) COSTS: Base = MTDC (modular direct costs, minus equipment, tuition and patient care). F&A = base x rate. UConn Health on-campus research rate = 66.5% (off-campus 26%). Cognizant agency: DHHS Cost Allocation Services.",
+
+    "ROUNDING: Keep cents in the JSON (2 decimals). Never round salaries to whole thousands.",
+
+    "Put every assumption you made (a default rate, a guessed start date, a placeholder name) in 'assumptions' as one short sentence each."
+  ],
+
+  "output_format": {
+    "description": "The ONE JSON object the LLM returns. Every amount is in US dollars per budget year. Arrays of yearly values have one number per budget year.",
+    "schema": {
+      "project": {
+        "title": "string, e.g. 'RFA-HG-27-007 personnel budget'",
+        "mechanism": "string, e.g. 'R01' or 'R21'",
+        "start_date": "MM/DD/YYYY",
+        "years": "integer, number of budget years",
+        "budget_type": "'modular' or 'detailed'"
+      },
+      "rates": {
+        "salary_cap": "number",
+        "annual_increase": "number as a fraction, e.g. 0.03",
+        "fa_rate": "number as a fraction, e.g. 0.665",
+        "fa_base": "'MTDC'"
+      },
+      "personnel": [
+        {
+          "name": "string",
+          "role": "PI | Co-Investigator | Postdoc | Graduate Student | Research Staff | Other",
+          "pay_basis": "'salary' or 'nrsa'",
+          "base_salary": "number (for 'salary'), or null",
+          "nrsa_start_level": "integer 0-7 (for 'nrsa'), or null",
+          "calendar_months": "number 0-12",
+          "fringe_rate": "number as a fraction",
+          "salary_requested": ["number per year"],
+          "fringe_requested": ["number per year"]
+        }
+      ],
+      "other_direct_costs": [
+        { "category": "Supplies | Travel | Equipment | Other", "description": "string", "amount": ["number per year"] }
+      ],
+      "totals": {
+        "salaries": ["number per year"],
+        "fringe": ["number per year"],
+        "other_direct": ["number per year"],
+        "total_direct": ["number per year"],
+        "modular_direct": ["number per year, or null if detailed"],
+        "fa_base": ["number per year"],
+        "fa": ["number per year"],
+        "total": ["number per year"]
+      },
+      "assumptions": ["short sentences"],
+      "questions": ["anything the user still needs to tell you"]
+    }
+  },
+
+  "sheet_layout": {
+    "description": "How the program builds the .xlsx from the JSON. The program writes FORMULAS, not the LLM's numbers, so the sheet recalculates when an input changes. The LLM's numbers are used to check the formulas.",
+    "file_name": "<project.title>.xlsx",
+    "sheets": [
+      {
+        "name": "Budget",
+        "sections": [
+          {
+            "title": "INPUTS",
+            "rows": "One row per input: each person's base salary (or NRSA start level), calendar months and fringe rate, then salary cap, annual increase and F&A rate.",
+            "columns": ["Label", "Value", "Notes / source"],
+            "style": "Values in yellow cells with blue text (inputs people may change). Notes in grey."
+          },
+          {
+            "title": "NRSA POSTDOC STIPEND LEVELS (FY2026)",
+            "rows": "Levels 0 to 7 with the annual stipend, so postdoc formulas can look them up with INDEX.",
+            "columns": ["Level", "Annual stipend", "Source"]
+          },
+          {
+            "title": "BUDGET",
+            "columns": ["Item", "Year 1", "Year 2", "...", "Year N", "Total"],
+            "rows": [
+              "Budget year number (1, 2, 3, ...)",
+              "For each salaried person: base salary this year = base x (1 + increase)^(year - 1); salary used = MIN(base this year, cap); salary requested = salary used x months / 12; fringe = salary requested x fringe rate",
+              "For each NRSA person: level this year = MIN(start level + year - 1, 7); stipend = INDEX(stipend table, level + 1); salary requested = stipend x months / 12; fringe = salary requested x fringe rate",
+              "One row per other direct cost",
+              "Total salaries, Total fringe, Total other direct costs",
+              "TOTAL DIRECT COSTS",
+              "Modular direct costs = CEILING(total direct, 25000) (modular budgets only)",
+              "F&A = F&A base x F&A rate",
+              "TOTAL DIRECT + INDIRECT"
+            ],
+            "style": "Money as $#,##0. Total rows bold with light blue fill. Total column = SUM of the year columns."
+          },
+          {
+            "title": "Notes",
+            "rows": "Every item in 'assumptions', then: 'Confirm fringe and F&A rates with SPS before submitting.'"
+          }
+        ]
+      }
+    ],
+    "format": "Arial 10 pt. Header rows white bold text on dark blue. Freeze panes below the title."
+  },
+
+  "form_mapping": {
+    "description": "How the same JSON fills the PHS 398 Modular Budget form, one page per budget year.",
+    "fields": {
+      "Budget Period": "year number",
+      "Start Date / End Date": "start_date + (year - 1) years / one day before the next year's start",
+      "Direct Cost less Consortium Indirect (F&A)": "totals.modular_direct[year]",
+      "Total Direct Costs": "totals.modular_direct[year]",
+      "Indirect (F&A) Type": "'MTDC: Modified Total Direct Costs (on-campus research)'",
+      "Indirect (F&A) Rate (%)": "rates.fa_rate x 100",
+      "Indirect (F&A) Base ($)": "totals.fa_base[year]",
+      "Indirect (F&A) Funds Requested ($)": "totals.fa[year]",
+      "Cognizant Agency": "'Department of Health and Human Services (DHHS), Cost Allocation Services'",
+      "C. Total Direct and Indirect": "totals.total[year]",
+      "Cumulative totals": "sums of the same fields over all years",
+      "Personnel Justification": "one paragraph per person: role, calendar months, what they do"
+    }
+  },
+
+  "checks": [
+    "Every yearly array has exactly project.years numbers.",
+    "No calendar_months above 12 or below 0.",
+    "salary_requested <= MIN(base, salary_cap) x months / 12 (+ $1 for rounding).",
+    "total_direct = salaries + fringe + other_direct, for each year.",
+    "modular_direct is a multiple of 25,000 and >= total_direct, for each year (modular only).",
+    "fa = fa_base x fa_rate, and total = (modular_direct or total_direct) + fa, for each year."
+  ],
+
+  "example": {
+    "request": "I work full time and my salary is $100k per year. I want 1 month of my salary, with a full-time postdoc at NIH support level 1. It's an R21 starting July 1, 2027.",
+    "response": {
+      "project": { "title": "R21 personnel budget", "mechanism": "R21", "start_date": "07/01/2027", "years": 2, "budget_type": "modular" },
+      "rates": { "salary_cap": 228000, "annual_increase": 0.03, "fa_rate": 0.665, "fa_base": "MTDC" },
+      "personnel": [
+        {
+          "name": "PI (requester)", "role": "PI", "pay_basis": "salary", "base_salary": 100000, "nrsa_start_level": null,
+          "calendar_months": 1, "fringe_rate": 0.275,
+          "salary_requested": [8333.33, 8583.33], "fringe_requested": [2291.67, 2360.42]
+        },
+        {
+          "name": "Postdoc (TBD)", "role": "Postdoc", "pay_basis": "nrsa", "base_salary": null, "nrsa_start_level": 1,
+          "calendar_months": 12, "fringe_rate": 0.275,
+          "salary_requested": [63900.00, 64380.00], "fringe_requested": [17572.50, 17704.50]
+        }
+      ],
+      "other_direct_costs": [],
+      "totals": {
+        "salaries": [72233.33, 72963.33],
+        "fringe": [19864.17, 20064.92],
+        "other_direct": [0, 0],
+        "total_direct": [92097.50, 93028.25],
+        "modular_direct": [100000, 100000],
+        "fa_base": [100000, 100000],
+        "fa": [66500, 66500],
+        "total": [166500, 166500]
+      },
+      "assumptions": [
+        "PI salary rises 3% per year (default).",
+        "Fringe 27.5% is UConn Health's research rate for faculty and postdocs.",
+        "F&A 66.5% is UConn Health's on-campus research rate (MTDC).",
+        "The postdoc is not named yet."
+      ],
+      "questions": ["What is the PI's name?", "Are there supplies, travel or equipment to add?"]
+    }
+  }
+}
