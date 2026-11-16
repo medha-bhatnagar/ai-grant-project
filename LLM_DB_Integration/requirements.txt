@@ -1,0 +1,5 @@
+pymongo
+numpy
+requests
+sentence-transformers
+docling
