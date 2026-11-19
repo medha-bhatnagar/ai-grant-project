@@ -722,9 +722,30 @@ def make_budget_spreadsheet(request):
         result = budget_sheet.make_budget(request=str(request)[:4000])
     except budget_sheet.BudgetError as e:
         return f"ERROR: {e}"
-    result["download"] = f"/api/budgets/{result.pop('file')}"
+    result["download"] = f"/api/budgets/{result['file']}"
+    if result["budget_type"] == "modular":       # also fill the PHS 398 Modular Budget form from the spreadsheet
+        form = fill_budget_form(result["file"])
+        result["form_download"] = form if form.startswith("ERROR") else json.loads(form)["form_download"]
     result.pop("path", None)
+    result.pop("file", None)
     return json.dumps(result, ensure_ascii=False)
+
+
+def fill_budget_form(spreadsheet):
+    """Read a budget spreadsheet in data/budgets and fill the PHS 398 Modular Budget form from it."""
+    import budget_form
+    import budget_sheet
+    name = Path(str(spreadsheet)).name
+    path = budget_sheet.OUT_DIR / name
+    if not re.fullmatch(r"[A-Za-z0-9_]+\.xlsx", name) or not path.is_file():
+        files = sorted(p.name for p in budget_sheet.OUT_DIR.glob("*.xlsx"))[-5:]
+        return f"ERROR: no spreadsheet named {name!r}. Recent ones: {', '.join(files) or 'none'}"
+    try:
+        result = budget_form.make_form(path)
+    except budget_form.FormError as e:
+        return f"ERROR: {e}"
+    return json.dumps({"form_download": f"/api/budgets/{result['file']}", "pages": result["pages"],
+                       "per_year": result["per_year"], "cumulative_total": result["cumulative_total"]})
 
 
 # Tools an agent file can ask for by name in its "tools" list.
@@ -735,7 +756,12 @@ NAMED_TOOLS = {**TEAM_TOOLS, **LIBRARY_TOOLS,
                    "make an NIH budget Excel spreadsheet from a description and return its totals and download link. "
                    'args: {"request": "everything the user said about the budget: people, salaries, effort, postdoc '
                    'level, mechanism (R01/R21), start date, other costs"}',
-                   lambda args: make_budget_spreadsheet(args.get("request", "")))}
+                   lambda args: make_budget_spreadsheet(args.get("request", ""))),
+               "fill_budget_form": (
+                   "read an existing budget spreadsheet and fill the NIH PHS 398 Modular Budget form from it "
+                   '(one page per year + Personnel Justification). args: {"spreadsheet": "file name, e.g. '
+                   'R21_personnel_budget_20261119_173205.xlsx"}',
+                   lambda args: fill_budget_form(args.get("spreadsheet", "")))}
 
 
 def _named_tools(spec):

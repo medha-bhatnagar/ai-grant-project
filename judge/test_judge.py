@@ -198,5 +198,24 @@ def test_budget_spreadsheet_from_the_prompt_example(tmp_path):
     assert "ask_budget_builder" in judge.Judge(on_event=lambda t: None).agent.tools
 
 
+def test_form_is_filled_from_the_spreadsheet(tmp_path):
+    import budget_form
+    import budget_sheet
+    from openpyxl import load_workbook
+    from pypdf import PdfReader
+    s = budget_sheet.make_budget(data=budget_sheet.load_prompt()["example"]["response"], out_dir=tmp_path)
+    form = budget_form.make_form(tmp_path / s["file"])
+    assert [y["total"] for y in form["per_year"]] == [166500, 166500] and form["cumulative_total"] == 333000
+    text = " ".join(p.extract_text() for p in PdfReader(tmp_path / form["file"]).pages)
+    assert form["pages"] == 3 and "166,500.00" in text and "333,000.00" in text and "Personnel Justification" in text
+    wb = load_workbook(tmp_path / s["file"])                 # someone edits the spreadsheet in Excel ...
+    ws = wb["Budget"]
+    row = next(r for r in range(1, ws.max_row + 1)
+               if ws.cell(row=r, column=1).value == "Postdoc (TBD) (Postdoc): calendar months per year")
+    ws.cell(row=row, column=2).value = 6
+    wb.save(tmp_path / "edited.xlsx")
+    assert budget_form.make_form(tmp_path / "edited.xlsx")["per_year"][0]["direct"] == 75000   # ... the form follows
+
+
 def test_judge_has_the_team_tools():
     assert {"find_person", "list_team", "add_team_member"} <= set(judge.Judge(on_event=lambda t: None).agent.tools)

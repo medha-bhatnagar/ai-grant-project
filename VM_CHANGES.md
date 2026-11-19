@@ -169,3 +169,22 @@ The bigger Monday-demo build (Docket tab, uploads, outbox emails) was undone, as
   R01, PI 2 months of $150k, postdoc level 3, $15k supplies" gave $1,248,750, checked by hand, and
   the downloaded file calculates the same.
 - To undo: `git revert` this commit.
+
+## Step 9: read the budget spreadsheet and fill out the PHS 398 form
+
+- New `forms/phs398_modular_budget.pdf`: the NIH form template (from the professor's Data_Samples).
+- New `judge/budget_form.py`: reads a budget spreadsheet and **calculates its formulas** (pycel), so
+  it also works after someone edits and saves the spreadsheet in Excel. It writes one PDF with a
+  filled form page per budget year (period, dates, direct, F&A, totals, cumulative) and a Personnel
+  Justification page. Detailed budgets (over $250,000 a year) are refused with a message, since they
+  need the R&R form. Command line: `python judge/budget_form.py data/budgets/FILE.xlsx`.
+- `judge/budget_sheet.py`: the spreadsheet now has a "Project start date" input (the form needs it).
+- `judge/judge.py`: `make_budget_spreadsheet` also fills the form for modular budgets. There's a new
+  tool `fill_budget_form` for an existing spreadsheet, and `budget_builder.json` uses both.
+- `backend/assistant.py`: the download route also serves the filled `.pdf` (signed-in only).
+- `Dockerfile` copies `forms/`. `judge/requirements.txt`: pycel 1.0b30, reportlab 4.2.5.
+- Chat footnote says "used its tools" again (it had come back as "checked the database").
+- Tested: 22 tests pass. Edited spreadsheet (half-time postdoc, 09/01/2027 start) gave a $75,000
+  modular form with the new dates, matching hand math. Browser: one message made both files ($166,500
+  a year); both downloaded, and the PDF has 2 filled years plus the justification.
+- To undo: `git revert` this commit.

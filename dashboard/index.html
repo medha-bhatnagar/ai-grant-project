@@ -206,7 +206,7 @@ function makeChat(id,greeting){
       if(res.ok)b.innerHTML=md(data.reply);else b.textContent='The assistant is unavailable: '+(data.detail||'error '+res.status);
       const who=[...new Set((data.steps||[]).filter(x=>x.startsWith('judge uses ask_')).map(x=>x.split(' ')[2].slice(4)+' specialist'))];
       if(res.ok&&who.length){const s=document.createElement('div');s.className='sm mut';s.style.marginTop='6px';
-        s.textContent='Consulted: '+who.join(', ')+((data.steps||[]).some(x=>x.includes('specialist uses'))?' · checked the database':'');b.append(s)}
+        s.textContent='Consulted: '+who.join(', ')+((data.steps||[]).some(x=>x.includes('specialist uses'))?' · used its tools':'');b.append(s)}
     }catch(err){b.textContent='Could not reach the assistant. Is the app running?'}
     finally{btn.disabled=false;log.scrollTop=log.scrollHeight;refreshTeams()}};
   return r;

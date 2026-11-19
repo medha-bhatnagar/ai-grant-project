@@ -183,6 +183,8 @@ def build_xlsx(d, path):
         put(f"C{row}", note, color="595959")
         ref[key] = f"$B${row}"
 
+    inp("start", "Project start date (MM/DD/YYYY)", d["project"].get("start_date") or "07/01/2027", "@",
+        "Year 1 starts here; each budget year is 12 months")
     for i, p in enumerate(d["personnel"]):
         who = f"{p['name']} ({p['role']})"
         if p["pay_basis"] == "nrsa":

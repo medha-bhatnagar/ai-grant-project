@@ -39,6 +39,7 @@ COPY --chown=app:app judge/*.py ./judge/
 COPY --chown=app:app agents ./agents
 COPY --chown=app:app people.json demo_data.js ./
 COPY --chown=app:app samples ./samples
+COPY --chown=app:app forms ./forms
 RUN mkdir -p /app/data/uploads
 
 ENV APP_PORT=8000
