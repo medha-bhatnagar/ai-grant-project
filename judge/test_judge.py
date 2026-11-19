@@ -179,5 +179,24 @@ def test_cv_status_finds_3_of_5():
         judge._named_tools({"tools": ["delete_everything"]})
 
 
+def test_budget_spreadsheet_from_the_prompt_example(tmp_path):
+    import copy
+    import budget_sheet
+    from openpyxl import load_workbook
+    example = budget_sheet.load_prompt()["example"]["response"]
+    s = budget_sheet.make_budget(data=example, out_dir=tmp_path)
+    assert [y["total"] for y in s["per_year"]] == [166500, 166500] and s["warnings"] == []
+    ws = load_workbook(tmp_path / s["file"])["Budget"]
+    formulas = [c.value for row in ws.iter_rows() for c in row if isinstance(c.value, str) and c.value.startswith("=")]
+    assert any("CEILING(" in f for f in formulas) and any("INDEX(" in f for f in formulas)   # real formulas
+    wrong = copy.deepcopy(example)
+    wrong["totals"]["total"] = [999, 999]                    # an AI arithmetic slip is caught
+    assert budget_sheet.make_budget(data=wrong, out_dir=tmp_path)["warnings"]
+    wrong["personnel"][0]["calendar_months"] = 14            # impossible effort is refused
+    with pytest.raises(budget_sheet.BudgetError, match="calendar months"):
+        budget_sheet.make_budget(data=wrong, out_dir=tmp_path)
+    assert "ask_budget_builder" in judge.Judge(on_event=lambda t: None).agent.tools
+
+
 def test_judge_has_the_team_tools():
     assert {"find_person", "list_team", "add_team_member"} <= set(judge.Judge(on_event=lambda t: None).agent.tools)

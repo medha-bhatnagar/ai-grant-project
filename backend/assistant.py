@@ -32,3 +32,19 @@ def chat(body: ChatIn, user=Depends(signed_in)):
 @router.get("/team")
 def team(user=Depends(signed_in)):
     return judge_server.team()
+
+
+@router.get("/budgets/{name}")
+def budget_file(name: str, user=Depends(signed_in)):
+    """Download a budget spreadsheet the Budget Builder made (signed-in users only)."""
+    import re
+    import budget_sheet
+    from fastapi import HTTPException
+    from fastapi.responses import FileResponse
+    if not re.fullmatch(r"[A-Za-z0-9_]+\.xlsx", name):
+        raise HTTPException(404, "No such spreadsheet")
+    path = budget_sheet.OUT_DIR / name
+    if not path.is_file():
+        raise HTTPException(404, "No such spreadsheet")
+    return FileResponse(path, filename=name,
+                        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

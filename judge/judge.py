@@ -715,10 +715,27 @@ def cv_status():
                       ensure_ascii=False)
 
 
+def make_budget_spreadsheet(request):
+    """The budget_sheet.py pipeline: request -> AI JSON -> checked Excel file. Returns a summary."""
+    import budget_sheet
+    try:
+        result = budget_sheet.make_budget(request=str(request)[:4000])
+    except budget_sheet.BudgetError as e:
+        return f"ERROR: {e}"
+    result["download"] = f"/api/budgets/{result.pop('file')}"
+    result.pop("path", None)
+    return json.dumps(result, ensure_ascii=False)
+
+
 # Tools an agent file can ask for by name in its "tools" list.
 NAMED_TOOLS = {**TEAM_TOOLS, **LIBRARY_TOOLS,
                "cv_status": ("who on the grant team has and has not submitted a CV, with each CV file name. args: {}",
-                             lambda args: cv_status())}
+                             lambda args: cv_status()),
+               "make_budget_spreadsheet": (
+                   "make an NIH budget Excel spreadsheet from a description and return its totals and download link. "
+                   'args: {"request": "everything the user said about the budget: people, salaries, effort, postdoc '
+                   'level, mechanism (R01/R21), start date, other costs"}',
+                   lambda args: make_budget_spreadsheet(args.get("request", "")))}
 
 
 def _named_tools(spec):

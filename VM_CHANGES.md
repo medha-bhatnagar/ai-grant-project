@@ -151,3 +151,21 @@ The bigger Monday-demo build (Docket tab, uploads, outbox emails) was undone, as
 - `Dockerfile` copies the whole `samples/` folder.
 - Tested: 20 tests pass. Live answer: "3 of 5 submitted (Liu, Slaughter, Creech); missing Tsai and Thomasen".
 - To undo: `git revert` this commit.
+
+## Step 8: budget spreadsheets from a plain request (Budget Builder)
+
+- `agents/prompts/budget_spreadsheet.json`: the prompt. It holds the rules (NIH salary cap, calendar
+  months, NRSA stipends, 27.5% fringe, $25,000 modules, 66.5% F&A), the exact JSON the AI must
+  reply with, the sheet layout, the PHS 398 form mapping, the checks, and a worked example.
+- New `judge/budget_sheet.py`: request -> AI JSON -> `check()` -> Excel with real formulas, saved in
+  `data/budgets/`. The AI's totals are only used to catch mistakes, and impossible inputs are refused.
+  Command line: `python judge/budget_sheet.py "..."` or `--from-json file.json` (no AI).
+- New LLM `agents/llms/budget_builder.json` with the `make_budget_spreadsheet` tool.
+- `backend/assistant.py`: `GET /api/budgets/<file>` to download, signed-in users only (401 otherwise).
+- `dashboard/index.html`: chat replies can show download links, but only to this app's own `/api/` pages.
+- `judge/requirements.txt`: openpyxl 3.1.5.
+- Tested: 21 tests pass. Formulas were checked with a formula engine against Python math (example
+  R21 = $166,500 a year; a 5-year test with cap, level 7 and equipment matched). Browser: "5-year
+  R01, PI 2 months of $150k, postdoc level 3, $15k supplies" gave $1,248,750, checked by hand, and
+  the downloaded file calculates the same.
+- To undo: `git revert` this commit.
