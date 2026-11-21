@@ -15,3 +15,13 @@ uploads/
 
 files.zip
 files 2/
+
+# local working files, patches and credentials
+*.bak
+*.diff
+*.patch
+jar
+*-jar
+*.tar.gz
+.venv-test/
+node_modules/

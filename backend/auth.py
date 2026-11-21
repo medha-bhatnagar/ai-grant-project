@@ -65,3 +65,36 @@ async def oidc_identity(request):
     login_id = (claims.get(config.OIDC_USER_CLAIM) or claims.get("email") or claims.get("sub") or "").lower()
     return {"login_id": login_id, "email": (claims.get("email") or claims.get("preferred_username") or "").lower(),
             "name": claims.get("name") or login_id}
+
+
+async def send_guest_code(email, code, expires_minutes):
+    if config.AUTH_PROVIDER == "demo":
+        return False
+    if not all((config.GRAPH_TENANT_ID, config.GRAPH_CLIENT_ID,
+                config.GRAPH_CLIENT_SECRET, config.GRAPH_SENDER_EMAIL)):
+        raise AuthError("Microsoft Graph email delivery is not configured")
+    async with httpx.AsyncClient(timeout=10) as client:
+        token_response = await client.post(
+            f"https://login.microsoftonline.com/{config.GRAPH_TENANT_ID}/oauth2/v2.0/token",
+            data={"client_id": config.GRAPH_CLIENT_ID, "client_secret": config.GRAPH_CLIENT_SECRET,
+                  "scope": "https://graph.microsoft.com/.default", "grant_type": "client_credentials"},
+        )
+        token_response.raise_for_status()
+        access_token = token_response.json().get("access_token")
+        if not access_token:
+            raise AuthError("Microsoft Graph did not return an access token")
+        message = {
+            "message": {
+                "subject": "Grant application guest verification code",
+                "body": {"contentType": "Text", "content": f"Your verification code is {code}. It expires in {expires_minutes} minutes."},
+                "toRecipients": [{"emailAddress": {"address": email}}],
+            },
+            "saveToSentItems": "false",
+        }
+        response = await client.post(
+            f"https://graph.microsoft.com/v1.0/users/{config.GRAPH_SENDER_EMAIL}/sendMail",
+            headers={"Authorization": f"Bearer {access_token}"},
+            json=message,
+        )
+        response.raise_for_status()
+    return True
