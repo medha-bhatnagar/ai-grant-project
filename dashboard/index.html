@@ -1,110 +1,35 @@
 <!doctype html>
-<!--
-  Grant Application Assistant: layout prototype v3 (with sign-in) (sample data only, nothing is connected).
-  Run it: double-click this file, or `python3 -m http.server 8000` in this folder, then open http://localhost:8000
-  Direct links: index.html#login, #pi, #staff
--->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grant Application Assistant (layout prototype v3 (with sign-in))</title>
-<style>
-:root{--bg:#F4F6F9;--ink:#1B2430;--muted:#4A5565;--line:#D5DAE1;--navy:#14284B;--blue:#1F4E8C}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
-[hidden]{display:none!important}
-h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
-.sm{font-size:12px}.mut{color:var(--muted)}
-:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-.sr{position:absolute;left:-9999px}
-.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
-.btn{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:8px 14px;font:inherit;font-size:14px;min-height:40px;cursor:pointer}
-.btn:hover{background:#EEF3FA}.btn.p{background:var(--blue);color:#fff}.btn.p:hover{background:#18407A}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.dropzone{display:block;width:100%;margin:16px 0 4px;border:2px dashed #8A94A3;border-radius:8px;padding:18px;text-align:center;background:#F8FAFC;cursor:pointer}
-.dropzone:hover,.dropzone.over{border-color:var(--blue);background:#EEF3FA}
-.tag{display:inline-block;border:1px solid #6B7686;border-radius:20px;padding:2px 10px;font-size:12px;color:#3A4350;background:#fff;white-space:nowrap}
-.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #E6E9EE}
-.row.h{border:0;padding:0}
-.inp{flex:1;min-width:0;padding:10px;border:1px solid #8A94A3;border-radius:6px;font:inherit}
-.top{background:var(--navy);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 28px}
-.top span{display:flex;align-items:center;gap:12px}
-.opts{background:#fff;border-bottom:1px solid var(--line);padding:8px 28px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:13px}
-.page{padding:16px 28px}
-.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
-.tab{border:0;background:none;padding:10px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;min-height:44px}
-.tab[aria-selected=true]{color:var(--blue);border-bottom-color:var(--blue)}
-.badge{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:10px;background:var(--navy);color:#fff;font-size:12px;text-align:center}
-.shell{display:flex;gap:20px;align-items:flex-start}
-.main{flex:1;min-width:0}
-.dock{width:460px;flex:none}
-.pi-wrap.lay-B{display:flex;gap:20px;align-items:flex-start}
-.lay-B .tabs{flex-direction:column;width:190px;flex:none;border-bottom:0;margin:0}
-.lay-B .tab{text-align:left;border-bottom:0;border-left:3px solid transparent;margin:0}
-.lay-B .tab[aria-selected=true]{border-left-color:var(--blue);background:#EEF3FA}
-.lay-B .dock,.lay-C .dock{display:none}
-.chat{display:flex;flex-direction:column;gap:10px;height:calc(100vh - 150px);min-height:420px;margin:0}
-.drawer .chat{height:min(560px,calc(100vh - 120px))}
-.dock{position:sticky;top:12px;align-self:flex-start}
-.log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
-.msg p{margin:0 0 6px}.msg p:last-child{margin-bottom:0}
-.msg ul{margin:4px 0 6px;padding-left:18px}.msg li{margin:3px 0}
-.msg{border-radius:8px;padding:10px;font-size:14px;max-width:88%}
-.msg.me{background:#E9EEF6;align-self:flex-end}.msg.bot{background:var(--bg);border:1px solid var(--line)}
-.send{display:flex;gap:8px}
-.fab{position:fixed;right:20px;bottom:20px;z-index:20;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-.drawer{position:fixed;right:20px;bottom:76px;width:360px;max-width:calc(100vw - 40px);z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.3)}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.chip{border:1px solid #6B7686;background:#fff;border-radius:20px;padding:6px 12px;font:inherit;font-size:12px;color:#3A4350;cursor:pointer;min-height:32px}
-.chip[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
-.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
-.dn{font-size:12px;font-weight:600;text-align:center;color:var(--muted)}
-.day{border:1px solid var(--line);border-radius:8px;padding:6px;min-height:84px;font-size:12px;background:#fff}
-.wk .day{min-height:150px}
-.day.t{border:2px solid var(--blue)}.day.o{background:var(--bg);color:#7A8493}
-.dh{font-weight:600;margin-bottom:4px}
-.dl{display:block;color:#fff;border-radius:4px;padding:1px 6px;margin-top:3px;font-size:11px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wk .dl{white-space:normal}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin:12px 0}
-.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-.cal-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.split{display:grid;grid-template-columns:minmax(240px,1fr) minmax(300px,1.4fr);gap:16px;align-items:start}
-.item{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px;margin-bottom:8px;font:inherit;cursor:pointer;color:var(--ink)}
-.item.sel{border:2px solid var(--blue);background:#EEF3FA}
-.m{border-left:3px solid var(--line);padding:2px 10px;margin:8px 0;font-size:14px}
-.info{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:14px}
-.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px}
-.login h1{font-size:28px}.login p{margin:0;color:var(--muted)}
-.lc{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;width:100%;max-width:900px;margin-top:16px}
-.lc form{flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px;margin:0}
-#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
-#toast.show{opacity:1}
-@media (max-width:900px){.shell,.split{flex-direction:column;display:flex}.dock{width:100%}}
-.lc .card{flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px;margin:0}a.btn{display:inline-block;text-decoration:none;text-align:center;padding-top:10px}.err{color:#8A1C1C;background:#FDECEC;border:1px solid #E5B4B4;border-radius:8px;padding:10px 14px;margin:0}
-</style>
+<title>Grant Application Assistant</title>
+<link rel="preload" href="/fonts/atkinson-hyperlegible-next-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/app.css">
 </head>
 <body>
 
 <section id="view-login" class="login">
   <h1>Grant Application Assistant</h1>
-  <p>Sign in with your UConn account. You enter your password on UConn's own page, never here.</p>
+  <p>Prepare grant applications, share documents with collaborators, and work with Sponsored Program Services in one place.</p>
+  <p class="sm mut">You sign in on UConn's own page. Your password is never entered here.</p>
   <p class="err" id="login-err" role="alert" hidden></p>
   <div class="lc">
-    <div class="card"><h2>Investigator sign in</h2><p class="sm mut">Requests, deadlines, ready documents, collaboration, assistant</p><a class="btn p" href="/auth/login?as=pi">Continue to UConn sign-in</a></div>
-    <div class="card"><h2>Staff sign in (SPS and Laura)</h2><p class="sm mut">All requests, collaboration queue, all deadlines, assistant</p><a class="btn p" href="/auth/login?as=staff">Continue to UConn sign-in</a></div>
+    <div class="card"><h2>Investigators</h2><p class="sm mut">Prepare your applications, upload documents, and work with collaborators.</p><a class="btn p" href="/auth/login?as=pi">Sign in as an investigator</a></div>
+    <div class="card"><h2>SPS staff</h2><p class="sm mut">Review applications, check documents, and approve or ask for changes.</p><a class="btn p" href="/auth/login?as=staff">Sign in as SPS staff</a></div>
+    <div class="card"><h2>Invited collaborators</h2><p class="sm mut">Use the invitation link from your email. You will only see the application you were invited to.</p><a class="btn" href="/auth/guest">Open my invitation</a></div>
   </div>
 </section>
 
 <section id="view-pi" hidden>
-  <header class="top"><strong>Grant Application Assistant</strong><span><span id="pi-who">[PI name] · Investigator</span> <button class="btn" type="button" data-signout>Sign out</button></span></header>
+  <header class="top"><strong>Grant Application Assistant</strong><span><span id="pi-who">Investigator</span> <button class="btn" type="button" data-signout>Sign out</button></span></header>
   <div class="page"><div class="pi-wrap lay-A" id="pi-wrap">
     <div class="tabs" role="tablist" id="p-tabs" aria-label="Investigator sections"></div>
     <div class="shell"><div class="main">
-      <div role="tabpanel" id="pn-req"><h2>Requests that need your attention</h2><div id="p-req"></div></div>
-      <div role="tabpanel" id="pn-dl" hidden><div class="card" id="p-cal"></div></div>
-      <div role="tabpanel" id="pn-ready" hidden><h2>Completed documents</h2><div id="p-ready"></div></div>
-      <div role="tabpanel" id="pn-col" hidden><h2>Grant teams</h2><p class="mut sm">PIs, investigators and collaborators on each request. Ask the assistant to add someone.</p><div class="card" id="p-team"></div><h2>Documents that need collaboration</h2><p class="mut sm">Human subjects, animal use, subawards, and other paperwork that goes back and forth between you, SPS, and outside contributors.</p><div class="card" id="p-col"></div></div>
+      <div role="tabpanel" id="pn-req"><h2>Requirements to complete</h2><p class="preview-note"><span><strong>Preview.</strong> This checklist uses sample applications and is not connected yet. Checking items here is not saved.</span></p><div id="p-req"></div></div>
+      <div role="tabpanel" id="pn-dl" hidden><div class="card"><div id="p-cal"></div><div id="p-mydl"></div></div></div>
+      <div role="tabpanel" id="pn-ready" hidden><h2>Ready to submit</h2><div id="p-ready"></div></div>
+      <div role="tabpanel" id="pn-col" hidden><h2>Grant teams</h2><p class="mut sm">PIs, investigators and collaborators on each request. Ask the assistant to add someone.</p><div class="card" id="p-team"></div><h2>Shared documents</h2><p class="mut sm">Documents you are working on with SPS and outside collaborators, such as human subjects forms, subawards, and budgets.</p><div class="card" id="p-col"></div></div>
       <div role="tabpanel" id="pn-chat" hidden><div id="chat-slot"></div></div>
     </div><aside class="dock" id="dock"></aside></div>
   </div></div>
@@ -113,39 +38,81 @@ h1,h2,h3{margin:0}h2{font-size:16px;margin-bottom:10px}h3{font-size:15px}
 </section>
 
 <section id="view-staff" hidden>
-  <header class="top"><strong>Grant Application Assistant</strong><span><span id="st-who">[Staff name] · SPS / Laura</span> <button class="btn" type="button" data-signout>Sign out</button></span></header>
-  <div class="page"><div class="tabs" role="tablist" id="s-tabs" aria-label="Staff sections"></div>
-    <div id="sn-req"><div class="shell">
-      <div class="card" style="width:250px;flex:none"><h2>All requests</h2><div class="chips" id="s-chips"></div><div id="s-list"></div></div>
-      <div class="main"><div class="card"><div class="row h"><span><strong id="s-title" style="font-size:18px"></strong> <span class="tag" id="s-status"></span></span>
-        <span style="display:flex;gap:8px"><button class="btn" type="button" id="s-chg">Request changes</button><button class="btn p" type="button" id="s-ok">Approve</button></span></div></div>
-        <div class="tabs" role="tablist" id="s-inner" aria-label="Request sections"></div><div id="s-panel"></div></div>
-      <aside class="dock" id="s-chat"></aside></div></div>
-    <div id="sn-col" hidden><h2>Grant teams</h2><div class="card" id="s-team"></div><h2>Collaboration queue (all requests)</h2><div class="card" id="s-colall"></div></div>
+  <header class="top"><strong>Grant Application Assistant</strong><span><span id="st-who">SPS staff</span> <button class="btn" type="button" data-signout>Sign out</button></span></header>
+  <div class="page">
+    <div class="tabs" role="tablist" id="s-tabs" aria-label="Staff sections"></div>
+    <div id="sn-req">
+      <div class="staff-layout">
+        <aside class="request-rail card">
+          <div class="section-heading"><div><h2>Applications</h2><p class="sm mut">Select an application to review</p></div><span class="count" id="s-count"></span></div>
+          <div class="chips" id="s-chips"></div>
+          <div id="s-list" aria-live="polite"></div>
+        </aside>
+        <main class="staff-main">
+          <div class="selected-app card">
+            <div class="selected-app-heading">
+              <div><h2 id="s-title">Loading applications…</h2><p class="sm mut" id="s-subtitle"></p></div>
+              <span class="tag" id="s-status"></span>
+            </div>
+            <div class="review-actions"><button class="btn" type="button" id="s-chg">Ask for changes</button><button class="btn p" type="button" id="s-ok">Approve</button></div>
+          </div>
+          <div class="tabs inner-tabs" role="tablist" id="s-inner" aria-label="Selected application sections"></div>
+          <div id="s-panel" aria-live="polite"></div>
+          <details class="workspace-section assistant-section"><summary><span>Assistant</span><span class="sm mut">Ask about this application</span></summary><div id="s-chat"></div></details>
+        </main>
+      </div>
+    </div>
     <div id="sn-dl" hidden><div class="card" id="s-cal"></div></div>
   </div>
 </section>
+<dialog id="pdf-review-modal" class="pdf-review">
+  <div class="pdf-review-shell">
+    <iframe id="pdf-review-frame" title="PDF document preview"></iframe>
+    <aside class="pdf-review-side">
+      <div class="pdf-review-head"><h3 id="pdf-review-title">Document review</h3><button class="btn" type="button" id="pdf-review-close">Close</button></div>
+      <div id="pdf-review-comments"></div>
+    </aside>
+  </div>
+</dialog>
 <div id="toast" role="status"></div>
 
 <script>
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* Turn a failed response into a sentence for people, not raw JSON. The backend sends {"detail": "..."}. */
+async function apiError(response){
+  let text='';try{text=await response.text()}catch(e){}
+  try{const d=JSON.parse(text).detail;if(typeof d==='string')return d;if(Array.isArray(d))return 'Some information is missing or not valid. Please check the form.'}catch(e){}
+  if(response.status===401)return 'Your session has ended. Please sign in again.';
+  if(response.status===403)return 'You do not have permission to do that.';
+  if(response.status===413)return 'The file is too large.';
+  return 'Something went wrong (error '+response.status+'). Please try again.';
+}
+/* One live workspace (and one chat connection) per page section. Starting a new one stops the old one,
+   so switching tabs or re-rendering never leaves extra connections open. */
+const LIVE={};
+function stopLive(key){const s=LIVE[key];if(s?.socket){s.socket.onclose=null;s.socket.close()}LIVE[key]={gen:(s?.gen||0)+1,socket:null};return LIVE[key].gen}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.i);toast.i=setTimeout(()=>t.classList.remove('show'),2200)}
 const D0=new Date(new Date().setHours(0,0,0,0));
 const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const key=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
 const mon=d=>add(d,-((d.getDay()+6)%7));
 const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+/* display helpers: backend values are unchanged, only how they are shown */
+const STATUS_LABEL={'Incomplete':'In preparation','In review by SPS':'In review by SPS','Approved':'Approved','Changes requested':'Changes requested'};
+const statusLabel=s=>STATUS_LABEL[s]||s||'';
+const statusTag=s=>`<span class="tag" data-status="${esc(String(s||''))}">${esc(statusLabel(s))}</span>`;
+const when=v=>{if(!v)return '';const d=new Date(String(v).replace(' ','T'));return isNaN(d)?String(v):d.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})};
+const human=e=>{const t=String(e||'Activity').replaceAll('_',' ');return t.charAt(0).toUpperCase()+t.slice(1)};
+const previewNote=t=>`<p class="preview-note"><span><strong>Preview.</strong> ${t}</span></p>`;
 
 /* ---------- sample data (replace with API calls later) ---------- */
-const T={sub:['Submission','Submit','#1F4E8C'],rev:['SPS review','Review','#6B3FA0'],cmp:['Compliance (IRB/IACUC)','IRB/IACUC','#B45309'],col:['Collaborator input','Collab','#0F766E'],frm:['Forms and budget','Forms','#4B5563']};
+const T={sub:['Submission','Submit','#16324A'],rev:['SPS review','Review','#5B3F8F'],cmp:['Compliance (IRB/IACUC)','IRB/IACUC','#9A5200'],col:['Collaborator input','Collab','#2E6A4E'],frm:['Forms and budget','Forms','#44525C']};
 const mk=(a,f)=>a.map(n=>({n,done:f(n)}));
 const REQ=[
  {id:'SAMPLE-001',pi:'[PI name 1]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Biosketch','Specific aims'],n=>n==='Biosketch'),act:['[Date] · [Who]: [Action]']},
  {id:'SAMPLE-002',pi:'[PI name 2]',src:'Foundation',status:'In review by SPS',items:mk(['Budget','Biosketch','Research plan'],()=>true),act:['[Date] · [Who]: [Action]','[Date] · [Who]: [Action]']},
- {id:'SAMPLE-003',pi:'[PI name 3]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Letters of support'],()=>false),act:['[Date] · [Who]: [Action]']},
- {id:'SAMPLE-004',pi:'[PI name 4]',src:'NIH',status:'Ready for SPS review',items:mk(['Specific aims','Research strategy','Budget','Budget justification','Biosketch','Letters of support'],()=>true),act:['Good sample: good_grant.docx']},
- {id:'SAMPLE-005',pi:'[PI name 5]',src:'NIH',status:'Incomplete',items:mk(['Specific aims','Research strategy','Budget','Budget justification','Biosketch'],n=>['Specific aims','Budget','Budget justification'].includes(n)),act:['Bad sample: bad_grant.docx']}];
+ {id:'SAMPLE-003',pi:'[PI name 3]',src:'NIH',status:'Incomplete',items:mk(['Budget','Budget justification','Letters of support'],()=>false),act:['[Date] · [Who]: [Action]']}];
 const DL=[[1,'frm','SAMPLE-001','Budget due to SPS'],[3,'col','SAMPLE-001','External collaborator input due'],[4,'cmp','SAMPLE-001','IRB paperwork due'],[6,'rev','SAMPLE-002','SPS internal review'],[9,'sub','SAMPLE-002','Submission deadline'],[12,'cmp','SAMPLE-003','IACUC protocol due'],[16,'frm','SAMPLE-003','Forms due to SPS'],[21,'sub','SAMPLE-001','Submission deadline']].map(([o,t,r,x])=>({d:add(D0,o),t,r,x}));
 const COL=[
  {id:1,name:'Human subjects (IRB) application',req:'SAMPLE-001',kind:'Human subjects',ver:'v3',turn:'PI',who:['PI','SPS','External: [name]'],msgs:[['SPS','[Date]','The consent form needs revised language.'],['PI','[Date]','Updated in v2, please check.'],['External','[Date]','[Collaborator comment]']]},
@@ -153,35 +120,36 @@ const COL=[
  {id:3,name:'Subaward agreement',req:'SAMPLE-002',kind:'Subaward',ver:'v2',turn:'SPS',who:['PI','SPS','External: [institution]'],msgs:[['External','[Date]','[Signed copy attached]']]}];
 
 /* ---------- tabs ---------- */
-function drawTabs(list,items,cur,on){
-  list.innerHTML=items.map(([id,l,b])=>`<button class="tab" role="tab" aria-selected="${id===cur}" tabindex="${id===cur?0:-1}" data-id="${id}">${l}${b!=null?`<span class="badge">${b}</span>`:''}</button>`).join('');
+function drawTabs(list,items,cur,on,panelFor){
+  list.innerHTML=items.map(([id,l,b])=>{const pid=panelFor?panelFor(id):null;return `<button class="tab" role="tab" id="${list.id}-${id}" ${pid?`aria-controls="${pid}"`:''} aria-selected="${id===cur}" tabindex="${id===cur?0:-1}" data-id="${id}">${l}${b!=null?`<span class="badge">${b}</span>`:''}</button>`}).join('');
+  if(panelFor){const pid=panelFor(cur),p=pid&&document.getElementById(pid);if(p){p.setAttribute('role','tabpanel');p.setAttribute('aria-labelledby',`${list.id}-${cur}`)}}
   list.onclick=e=>{const b=e.target.closest('.tab');if(b){on(b.dataset.id);$('.tab[aria-selected=true]',list).focus()}};
   list.onkeydown=e=>{if(!/^Arrow(Left|Right|Up|Down)$/.test(e.key))return;e.preventDefault();const t=$$('.tab',list),i=t.indexOf(document.activeElement);if(i<0)return;const n=t[(i+(/Right|Down/.test(e.key)?1:-1)+t.length)%t.length];on(n.dataset.id);$('.tab[aria-selected=true]',list).focus()};
 }
 
 /* ---------- grant teams (from the database, via /api/team) ---------- */
 async function refreshTeams(){
-  const roots=['#p-team','#s-team'].map(s=>$(s)).filter(Boolean);
+  const roots=['#p-team'].map(s=>$(s)).filter(Boolean);
   let team;
   try{const r=await fetch('/api/team',{credentials:'same-origin'});if(!r.ok)throw new Error();team=(await r.json()).team||[]}
   catch(e){roots.forEach(r=>r.innerHTML='<p class="mut sm">Team list unavailable right now.</p>');return}
   const order={'PI':0,'Co-Investigator':1,'Collaborator':2},by={};
   team.forEach(m=>(by[m.request_id]=by[m.request_id]||[]).push(m));
-  const html=Object.keys(by).sort().map(id=>`<h3 style="margin:8px 0 4px">${esc(id)}</h3>`+
+  const out=Object.keys(by).sort().map(id=>`<h3 style="margin:8px 0 4px">${esc(id)}</h3>`+
     by[id].sort((a,b)=>order[a.role]-order[b.role]).map(m=>`<div class="row"><span><span class="tag">${esc(m.role)}</span> <strong>${esc(m.name)}</strong><br>
      <span class="sm mut">${esc(m.title)} · ${esc(m.department)} · ${esc(m.institution)} · ${esc(m.email)}${m.invited_by?' · invited by '+esc(m.invited_by):''}</span></span></div>`).join('')).join('')
     ||'<p class="mut sm">No teams yet. Ask the assistant to set one up.</p>';
-  roots.forEach(r=>r.innerHTML=html);
+  roots.forEach(r=>r.innerHTML=out);
 }
 
-/* Turns the assistant's simple Markdown (bold, bullets, numbered lists) into safe HTML. */
+/* Turns the assistant's simple Markdown (bold, bullets, links) into safe HTML. Links can only go to
+   this app's own /api/ files or to an Outlook compose page. */
 function md(text){
   const blocks=[];let list=null;
   for(const raw of esc(text).split('\n')){
     const line=raw.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^#+\s*/,'')
-      .replace(/\[([^\]]+)\]\((\/api\/[A-Za-z0-9_\/.-]+)\)/g,'<a href="$2" download>$1</a>')   // links into this app
-      .replace(/\[([^\]]+)\]\((https:\/\/outlook\.office\.com\/mail\/deeplink\/compose\?[^)\s"<>]+)\)/g,
-               '<a href="$2" target="_blank" rel="noopener">$1</a>');   // and Outlook compose links, nothing else
+      .replace(/\[([^\]]+)\]\((\/api\/[A-Za-z0-9_\/.-]+)\)/g,'<a href="$2" download>$1</a>')
+      .replace(/\[([^\]]+)\]\((https:\/\/outlook\.office\.com\/mail\/deeplink\/compose\?[^)\s"<>]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
     const item=line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)/);
     if(item){if(!list){list=[];blocks.push(list)}list.push(item[1])}
     else{list=null;if(line.trim())blocks.push(line)}
@@ -193,11 +161,10 @@ function md(text){
    Sends each message to the AI Judge (POST /api/chat, signed-in users only) with what the user is looking at. */
 function makeChat(id,greeting){
   const r=document.createElement('aside');r.id=id;r.className='card chat';
-  r.innerHTML=`<div class="row h"><h2 style="margin:0">Assistant</h2><label class="sm mut">Panel size <input class="chat-size" type="range" min="320" max="700" value="460" step="10"></label></div><span class="tag about" style="align-self:flex-start"></span><div class="log" role="log" aria-live="polite"><div class="msg bot"></div></div><form class="send"><label class="sr" for="${id}-in">Message</label><input class="inp" id="${id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn p" type="submit">Send</button></form>`;
+  r.innerHTML=`<h2 style="margin:0">Assistant</h2><span class="sm mut about"></span><div class="log" role="log" aria-live="polite"><div class="msg bot"></div></div><form class="send"><label class="sr" for="${id}-in">Message</label><input class="inp" id="${id}-in" placeholder="Ask a question" autocomplete="off"><button class="btn p" type="submit">Send</button></form>`;
   const log=$('.log',r),session=id+'-'+Math.random().toString(36).slice(2,10);let about='';
   log.children[0].textContent=greeting;
-  r.setAbout=t=>{about=t;$('.about',r).textContent='About: '+t};
-  $('.chat-size',r).oninput=e=>{const dock=r.closest('.dock');if(dock)dock.style.width=e.target.value+'px'};
+  r.setAbout=t=>{about=t||'';$('.about',r).textContent=t?'Asking about: '+t:''};
   const say=(cls,text)=>{const m=document.createElement('div');m.className='msg '+cls;m.textContent=text;log.append(m);log.scrollTop=log.scrollHeight;return m};
   $('form',r).onsubmit=async e=>{e.preventDefault();const i=$('.send input',r),btn=$('.send button',r),v=i.value.trim();if(!v)return;
     say('me',v);i.value='';btn.disabled=true;
@@ -224,12 +191,25 @@ function cal(root,reqId){
   const wk=st.v==='week',lim=wk?9:2;
   const chip=x=>`<span class="dl" style="background:${T[x.t][2]}" title="${x.r}: ${x.x}">${wk?`${T[x.t][1]}: ${x.r}<br>${x.x}`:`${T[x.t][1]} ${x.r.slice(-3)}`}</span>`;
   const up=list.filter(x=>x.d>=D0).sort((a,b)=>a.d-b.d).slice(0,6);
-  root.innerHTML=`<div class="cal-h"><span role="group" aria-label="View"><button class="chip" data-v="week" aria-pressed="${wk}">Week</button> <button class="chip" data-v="month" aria-pressed="${!wk}">Month</button></span>
+  root.innerHTML=`${previewNote('These deadlines are sample dates. Real contribution deadlines assigned to you are listed under the calendar.')}<div class="cal-h"><span role="group" aria-label="View"><button class="chip" data-v="week" aria-pressed="${wk}">Week</button> <button class="chip" data-v="month" aria-pressed="${!wk}">Month</button></span>
    <button class="btn" data-n="-1" aria-label="Previous">&lsaquo;</button><button class="btn" data-n="0">Today</button><button class="btn" data-n="1" aria-label="Next">&rsaquo;</button><strong>${title}</strong></div>
    <div class="grid7 ${wk?'wk':''}">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="dn">${d}</div>`).join('')}${days.map(d=>{const L=by[key(d)]||[];return `<div class="day${key(d)===key(D0)?' t':''}${!wk&&d.getMonth()!==mo?' o':''}"><div class="dh">${d.getDate()}</div>${L.slice(0,lim).map(chip).join('')}${L.length>lim?`<span class="sm">+${L.length-lim} more</span>`:''}</div>`}).join('')}</div>
    <div class="legend">${Object.values(T).map(t=>`<span><span class="sw" style="background:${t[2]}"></span>${t[0]}</span>`).join('')}</div>
    <h3>Coming up</h3>${up.map(x=>`<div class="row"><span><span class="sw" style="background:${T[x.t][2]}"></span><strong>${fmt(x.d)}</strong> · ${T[x.t][0]}<br><span class="sm">${x.r}: ${x.x}</span></span></div>`).join('')}`;
   root.onclick=e=>{const v=e.target.closest('[data-v]'),n=e.target.closest('[data-n]');if(v){st.v=v.dataset.v;st.o=0;cal(root,reqId)}if(n){st.o=n.dataset.n==='0'?0:st.o+ +n.dataset.n;cal(root,reqId)}};
+}
+
+/* Real deadlines from assigned tasks. Kept in its own container so moving the sample calendar never erases it. */
+async function loadAssignedDeadlines(root,applicationId){
+  const head='<h3 style="margin-top:24px">My contribution deadlines</h3>';
+  root.innerHTML=head+'<p class="mut sm">Loading your deadlines…</p>';
+  try{
+    const response=await fetch(`/api/collaboration/tasks${applicationId?`?application_id=${encodeURIComponent(applicationId)}`:''}`,{credentials:'same-origin'});
+    if(!response.ok)throw new Error(await apiError(response));
+    const tasks=await response.json();
+    const upcoming=tasks.filter(t=>t.due_at&&t.status==='Pending').sort((a,b)=>String(a.due_at).localeCompare(String(b.due_at)));
+    root.innerHTML=head+(upcoming.map(t=>`<div class="row"><span><strong>${esc(t.description)}</strong><br><span class="sm mut">${esc(t.document_name||t.title||'Grant contribution')}</span></span><span class="sm"><strong>Due ${esc(when(t.due_at))}</strong></span></div>`).join('')||'<p class="mut sm">No assigned deadlines.</p>');
+  }catch(error){root.innerHTML=head+`<p class="err">Could not load your deadlines. ${esc(error.message)}</p>`}
 }
 
 /* ---------- collaboration (back and forth between PI, SPS, and outside contributors) ---------- */
@@ -247,136 +227,448 @@ function collab(root,role,reqId,after){
 }
 
 /* ---------- persistent collaboration workspace ---------- */
-async function liveCollaboration(root, role, reqId){
-  root.innerHTML='<p class="mut">Loading collaboration documents...</p>';
+const commentForm=(id,scopes)=>`<form id="${id}" class="send"><input class="inp" name="body" aria-label="Comment" placeholder="Add a comment" maxlength="10000" required><select class="inp" name="scope" aria-label="Comment applies to"><option value="">General comment</option>${scopes.map(s=>`<option>${esc(s)}</option>`).join('')}</select><button class="btn p" type="submit">Comment</button></form>`;
+async function fetchDocument(id){
+  const r=await fetch(`/api/collaboration/documents/${id}`,{credentials:'same-origin'});
+  if(!r.ok)throw new Error(await apiError(r));
+  const d=await r.json();
+  return Object.assign({name:'Untitled document',category:'Other',status:'Draft',current_version:0},d,{
+    versions:d.versions||[],comments:d.comments||[],activity:d.activity||[],assignments:d.assignments||[],scope_options:d.scope_options||[]});
+}
+/* Rules shown in the page mirror the backend rules; the backend still enforces them. */
+const canResolveDoc=d=>!!ME&&d.application_owner_id===ME.id;
+const canCommentDoc=d=>!!ME&&(ME.role==='sps'||d.application_owner_id===ME.id||d.assignments.some(a=>a.user_id===ME.id&&(a.can_comment||a.permission==='comment'))&&(ME.role!=='guest'||ME.guest_permissions?.includes('comment')));
+const canUploadDoc=d=>!!ME&&(ME.role==='sps'||d.application_owner_id===ME.id||d.assignments.some(a=>a.user_id===ME.id&&(a.can_edit||['edit','upload'].includes(a.permission)))&&(ME.role!=='guest'||ME.guest_permissions?.includes('upload')));
+const canAssignDoc=d=>!!ME&&(ME.role==='sps'||d.application_owner_id===ME.id);
+
+/* PDF review dialog: the PDF on the left, comments on the right. Re-reads the document after every action. */
+async function openPdfReview(docId,url,title,onChange){
+  const modal=$('#pdf-review-modal'),side=$('#pdf-review-comments');
+  $('#pdf-review-title').textContent=title;
+  $('#pdf-review-frame').src=url;
+  modal.onclose=()=>{$('#pdf-review-frame').src='about:blank'};
+  $('#pdf-review-close').onclick=()=>modal.close();
+  const draw=async()=>{
+    let d;
+    try{d=await fetchDocument(docId)}catch(error){side.innerHTML=`<p class="err">${esc(error.message)}</p>`;return}
+    side.innerHTML=`<h4>Comments</h4>${d.comments.map(c=>`<div class="m"><strong>${esc(c.author_name)}</strong><span class="sm mut"> · ${esc(c.scope||'General')}</span><br>${esc(c.body)}${c.resolved_at?' · Resolved':''}${canResolveDoc(d)&&!c.resolved_at?` <button class="btn" type="button" data-popup-resolve="${c.id}">Resolve</button>`:''}</div>`).join('')||'<p class="mut sm">No comments yet.</p>'}
+      ${canCommentDoc(d)?commentForm('pdf-review-comment',d.scope_options).replace('class="send"','class="send" style="margin-top:12px;flex-direction:column"'):'<p class="mut sm">Commenting is not enabled.</p>'}`;
+    const form=$('#pdf-review-comment');
+    if(form)form.onsubmit=async e=>{
+      e.preventDefault();const button=$('button',form);button.disabled=true;
+      const response=await fetch(`/api/collaboration/documents/${docId}/comments`,{method:'POST',body:new FormData(form),credentials:'same-origin'});
+      if(!response.ok){button.disabled=false;toast(await apiError(response));return}
+      await draw();onChange&&onChange();
+    };
+    $$('[data-popup-resolve]',side).forEach(b=>b.onclick=async()=>{
+      b.disabled=true;
+      const response=await fetch(`/api/collaboration/documents/${docId}/comments/${b.dataset.popupResolve}/resolve`,{method:'POST',credentials:'same-origin'});
+      if(!response.ok){b.disabled=false;toast(await apiError(response));return}
+      await draw();onChange&&onChange();
+    });
+  };
+  side.innerHTML='<p class="mut sm">Loading comments…</p>';
+  if(!modal.open)modal.showModal();
+  await draw();
+}
+
+async function liveCollaboration(root, role, reqId, initialDocId=null, apps=null, onPick=null){
+  const key=root.closest('section')?.id||'live';
+  const gen=stopLive(key);
+  const stale=()=>LIVE[key].gen!==gen;   // a newer workspace replaced this one: stop touching the page
+  const isGuest=role==='Guest'||role==='guest';
+  root.innerHTML='<p class="mut">Loading collaboration documents…</p>';
+  let docs;
   try{
     const url=reqId?`/api/collaboration/documents?application_id=${encodeURIComponent(reqId)}`:'/api/collaboration/documents';
     const response=await fetch(url,{credentials:'same-origin'});
-    if(!response.ok)throw new Error('Unable to load documents');
-    const docs=await response.json();
-    let selected=docs[0]?.id||null;
-    const render=async()=>{
-      const current=docs.find(d=>d.id===selected)||docs[0];
-      root.innerHTML=`<div class="row h"><div><h2>Collaboration workspace</h2><span class="sm mut">${docs.length} document${docs.length===1?'':'s'}</span></div>
-        <div class="chips"><button class="chip" data-live-filter="all">All</button><button class="chip" data-live-filter="mine">Needs my action</button><button class="chip" data-live-filter="waiting">Waiting on others</button><button class="chip" data-live-filter="done">Completed</button></div></div>
-        <div class="split"><div><input class="inp" id="live-search" placeholder="Search documents" autocomplete="off"><div id="live-docs" style="margin-top:10px"></div></div>
-        <div id="live-detail"><p class="mut">Select a document.</p></div></div>`;
-      const list=$('#live-docs',root), search=$('#live-search',root);
-      const drawList=()=>{const q=(search.value||'').toLowerCase();list.innerHTML=docs.filter(d=>!q||`${d.name} ${d.category} ${d.application_id}`.toLowerCase().includes(q)).map(d=>`<button class="item${d.id===selected?' sel':''}" data-live-id="${d.id}"><strong>${esc(d.name)}</strong><br><span class="sm mut">${esc(d.application_id)} · ${esc(d.category)}</span><br><span class="tag">${esc(d.status)} · v${d.current_version}</span></button>`).join('')||'<p class="mut">No matching documents.</p>'};
-      drawList();search.oninput=drawList;
-      const show=async()=>{
-        if(!current)return;
-        const r=await fetch(`/api/collaboration/documents/${current.id}`,{credentials:'same-origin'});if(!r.ok)throw new Error('Unable to load document');const d=await r.json();
-        $('#live-detail',root).innerHTML=`<div class="card" style="margin:0"><div class="row h"><div><h3>${esc(d.name)}</h3><span class="sm mut">${esc(d.application_id)} · ${esc(d.category)} · owner ${esc(d.owner_name||'')}</span></div><span class="tag">${esc(d.status)} · v${d.current_version}</span></div>
-          <div class="row"><span><strong>Versions</strong><br><span class="sm mut">${d.versions.length} preserved version${d.versions.length===1?'':'s'}</span></span></div>
-          <label class="dropzone" id="live-dropzone" for="live-upload">Drop a file here or click to choose one<input id="live-upload" type="file" hidden></label>
-          <div>${d.versions.map(v=>`<div class="row"><span>v${v.version} · ${esc(v.original_name)}<br><span class="sm mut">${esc(v.uploader_name)} · ${esc(v.uploaded_at)}</span></span><a class="btn" href="/api/collaboration/documents/${d.id}/versions/${v.version}/download">Download</a></div>`).join('')||'<p class="mut sm">No uploaded versions yet.</p>'}</div>
-          <h3 style="margin-top:14px">Comments</h3>${d.comments.map(c=>`<div class="m"><span class="tag">${esc(c.author_name)} · ${esc(c.author_role)}</span> <span class="sm mut">${esc(c.created_at)}</span><br>${esc(c.body)} ${c.resolved_at?'· Resolved':`<button class="btn" data-resolve="${c.id}">Resolve</button>`}</div>`).join('')||'<p class="mut sm">No comments yet.</p>'}
-          <form id="live-comment" class="send" style="margin-top:10px"><input class="inp" name="body" placeholder="Add a comment" maxlength="10000" required><button class="btn p">Comment</button></form>
-          <h3 style="margin-top:14px">Activity</h3>${d.activity.map(a=>`<div class="row"><span>${esc(a.event_type.replaceAll('_',' '))}</span><span class="sm mut">${esc(a.actor_name||'System')} · ${esc(a.created_at)}</span></div>`).join('')||'<p class="mut sm">No activity yet.</p>'}</div>`;
-        const upload=async f=>{if(!f)return;const form=new FormData();form.append('file',f);const response=await fetch(`/api/collaboration/documents/${d.id}/versions`,{method:'POST',body:form,credentials:'same-origin'});if(!response.ok){toast(await response.text());return}toast('Version uploaded');const fresh=await fetch(`/api/collaboration/documents?application_id=${encodeURIComponent(d.application_id)}`);docs.splice(0,docs.length,...await fresh.json());await render()};
-        const dropzone=$('#live-dropzone',root);
-        $('#live-upload',root).onchange=e=>upload(e.target.files[0]);
-        ['dragenter','dragover'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.add('over')}));
-        ['dragleave','drop'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.remove('over')}));
-        dropzone.addEventListener('drop',e=>upload(e.dataTransfer.files[0]));
-        $('#live-comment',root).onsubmit=async e=>{e.preventDefault();const response=await fetch(`/api/collaboration/documents/${d.id}/comments`,{method:'POST',body:new FormData(e.target),credentials:'same-origin'});if(!response.ok){toast(await response.text());return}await show()};
-        $$('[data-resolve]',root).forEach(b=>b.onclick=async()=>{const response=await fetch(`/api/collaboration/documents/${d.id}/comments/${b.dataset.resolve}/resolve`,{method:'POST',credentials:'same-origin'});if(response.ok)await show()});
-      };
-      $$('[data-live-id]',root).forEach(b=>b.onclick=async()=>{selected=+b.dataset.liveId;await render()});if(current)await show();
+    if(!response.ok)throw new Error(await apiError(response));
+    docs=await response.json();
+  }catch(error){
+    if(stale())return;
+    root.innerHTML=`<p class="err">Could not load documents. ${esc(error.message)}</p><button class="btn" type="button" data-retry>Try again</button>`;
+    $('[data-retry]',root).onclick=()=>liveCollaboration(root,role,reqId,initialDocId);
+    return;
+  }
+  if(stale())return;
+  const applicationId=reqId||docs[0]?.application_id;
+  const canChat=!isGuest||ME?.guest_permissions?.includes('chat');
+  const canAttach=!isGuest||ME?.guest_permissions?.includes('upload');
+  if(isGuest&&!root.dataset.opened){
+    const applicationTitle=docs[0]?.application_title||applicationId||'Grant application';
+    root.innerHTML=`<div class="card"><div class="row h"><div><h2>New request</h2><p class="mut" style="margin:4px 0 0">You have been invited to collaborate on <strong>${esc(applicationTitle)}</strong>.</p></div><span class="tag">External collaborator</span></div><p class="sm mut">Open the request to view deadlines, documents, comments, and the application chat.</p><button class="btn p" id="open-collaboration-request" type="button">Open request</button></div>`;
+    $('#open-collaboration-request',root).onclick=()=>{root.dataset.opened='1';liveCollaboration(root,role,reqId)};
+    return;
+  }
+  let chatMessages=[];
+  let selected=docs.some(d=>d.id===initialDocId)?initialDocId:(docs[0]?.id||null);
+  const reloadDocs=async()=>{
+    const fresh=await fetch(`/api/collaboration/documents?application_id=${encodeURIComponent(applicationId)}`,{credentials:'same-origin'});
+    if(fresh.ok)docs.splice(0,docs.length,...await fresh.json());
+  };
+  const picker=apps&&apps.length>1?`<label class="field" style="max-width:420px;margin-bottom:var(--s4)"><span>Application</span><select class="inp" id="live-app">${apps.map(a=>`<option value="${esc(a.id)}"${a.id===applicationId?' selected':''}>${esc(a.id)}: ${esc(a.title)}</option>`).join('')}</select></label>`:'';
+  const appTitle=(apps||[]).find(a=>a.id===applicationId)?.title||docs[0]?.application_title||'';
+  root.innerHTML=`${picker}<div class="row h"><div><h2>Collaboration workspace</h2><span class="sm mut"><span id="live-count"></span>${applicationId?` · ${esc(applicationId)}${appTitle?': '+esc(appTitle):''}`:''}</span></div>
+    <div class="chips"><button class="chip" data-live-filter="all">All</button><button class="chip" data-live-filter="mine">Needs my action</button><button class="chip" data-live-filter="waiting">Waiting on others</button><button class="chip" data-live-filter="done">Completed</button></div></div>
+    <details class="workspace-section"><summary><span>General application chat</span><span class="sm mut">Messages with the application team</span></summary><div id="app-chat-log" class="log compact-log" role="log" aria-live="polite"><p class="mut sm">Loading messages…</p></div>${canChat?`<form id="app-chat-form" class="send" enctype="multipart/form-data"><input class="inp" name="body" aria-label="Message" placeholder="Message the application team" maxlength="10000">${canAttach?'<input class="inp" name="file" type="file" aria-label="Attach a file">':''}<button class="btn p" type="submit">Send</button></form>`:'<p class="mut sm">Chat is not enabled for your invitation.</p>'}</details>
+    ${isGuest?'<p class="sm mut">Guest access is limited to this application.</p>':`<details class="workspace-section"><summary><span>Invite external collaborator</span><span class="sm mut">Manage access to this application</span></summary><form id="invite-form"><div class="form-grid"><label class="field"><span>Email address</span><input class="inp" name="email" type="email" autocomplete="off" required></label><label class="field"><span>Name (optional)</span><input class="inp" name="display_name" autocomplete="off"></label></div><div class="permission-row"><label><input type="checkbox" name="view" checked> View</label><label><input type="checkbox" name="chat" checked> Chat</label><label><input type="checkbox" name="comment" checked> Comment</label><label><input type="checkbox" name="upload"> Upload</label><button class="btn p" type="submit">Create invitation link</button></div><p class="sm mut" id="invite-result" aria-live="polite"></p></form></details>`}
+    <div class="split"><div><input class="inp" id="live-search" type="search" aria-label="Search documents" placeholder="Search documents" autocomplete="off"><div id="live-docs" style="margin-top:10px"></div></div>
+    <div id="live-detail"><p class="mut">Select a document.</p></div></div>`;
+
+  const pick=$('#live-app',root);
+  if(pick)pick.onchange=()=>onPick&&onPick(pick.value);
+
+  /* chat */
+  const chatLog=$('#app-chat-log',root);
+  const drawChat=messages=>{chatMessages=messages;chatLog.innerHTML=messages.map(m=>`<div class="m"><span class="tag">${esc(m.author_name)}</span> <span class="sm mut">${esc(when(m.created_at))}</span><br>${esc(m.body)}${m.attachment?`<br><a class="btn" href="${esc(m.attachment.url)}">${esc(m.attachment.name)}</a>`:''}</div>`).join('')||'<p class="mut sm">No messages yet.</p>';chatLog.scrollTop=chatLog.scrollHeight};
+  const addMessage=m=>{if(!chatMessages.some(x=>x.id===m.id))drawChat([...chatMessages,m].sort((a,b)=>a.id-b.id))};
+  /* History is (re)loaded each time the live connection opens and merged by message id,
+     so nothing sent while connecting or during a dropped connection is missed. */
+  const loadHistory=async()=>{
+    try{
+      const chatResponse=await fetch(`/api/collaboration/applications/${encodeURIComponent(applicationId)}/chat`,{credentials:'same-origin'});
+      if(stale())return;
+      if(!chatResponse.ok){chatLog.innerHTML=`<p class="err">${esc(await apiError(chatResponse))}</p>`;return}
+      const fetched=await chatResponse.json();
+      const ids=new Set(fetched.map(m=>m.id));
+      drawChat([...fetched,...chatMessages.filter(m=>!ids.has(m.id))].sort((a,b)=>a.id-b.id));
+    }catch(e){if(!stale())chatLog.innerHTML='<p class="err">Could not load messages.</p>'}
+  };
+  const connect=(attempt=0)=>{
+    if(stale())return;
+    const protocol=location.protocol==='https:'?'wss':'ws';
+    const socket=new WebSocket(`${protocol}://${location.host}/api/collaboration/ws/${encodeURIComponent(applicationId)}`);
+    LIVE[key].socket=socket;
+    socket.onopen=()=>{attempt=0;loadHistory()};
+    socket.onmessage=e=>{try{addMessage(JSON.parse(e.data))}catch(err){}};
+    socket.onclose=e=>{
+      if(stale())return;
+      if(e.code===4401){toast('Your session has ended. Please sign in again.');return}
+      if(e.code===4403)return;                      // not allowed: do not retry
+      setTimeout(()=>connect(attempt+1),Math.min(30000,1000*2**attempt));   // dropped: reconnect, waiting longer each time
     };
-    await render();
-  }catch(error){root.innerHTML=`<p class="err">${esc(error.message)}</p>`}
+  };
+  if(!applicationId)chatLog.innerHTML='<p class="mut sm">No application selected.</p>';
+  else if(canChat)connect();
+  else await loadHistory();
+  const chatForm=$('#app-chat-form',root);
+  if(chatForm)chatForm.onsubmit=async e=>{
+    e.preventDefault();if(!applicationId)return;
+    const form=new FormData(chatForm),file=form.get('file'),body=String(form.get('body')||'').trim();
+    if(!body&&!file?.name){toast('Type a message or attach a file');return}
+    const socket=LIVE[key].socket;
+    if(socket?.readyState===WebSocket.OPEN&&!file?.name){socket.send(JSON.stringify({type:'message',body}));chatForm.reset();return}
+    const button=$('button[type=submit]',chatForm);button.disabled=true;
+    try{
+      const response=await fetch(`/api/collaboration/applications/${encodeURIComponent(applicationId)}/chat`,{method:'POST',body:form,credentials:'same-origin'});
+      if(response.ok){addMessage(await response.json());chatForm.reset()}else toast(await apiError(response));
+    }catch(err){toast('Message not sent. Check your connection and try again.')}
+    button.disabled=false;
+  };
+
+  /* invitations */
+  const invite=$('#invite-form',root);
+  if(invite)invite.onsubmit=async e=>{
+    e.preventDefault();const out=$('#invite-result',root),button=$('button[type=submit]',invite);
+    const p=['view','chat','comment','upload'].filter(x=>invite.elements[x]?.checked);
+    const form=new FormData(invite);form.set('application_id',applicationId);form.set('permissions',p.join(','));
+    button.disabled=true;out.textContent='Creating invitation…';
+    const response=await fetch('/api/collaboration/invitations',{method:'POST',body:form,credentials:'same-origin'});
+    out.textContent=response.ok?`Copy this invitation link: ${(await response.json()).invitation_url}`:await apiError(response);
+    button.disabled=false;
+  };
+
+  /* document list */
+  const list=$('#live-docs',root),search=$('#live-search',root);
+  const drawList=()=>{
+    $('#live-count',root).textContent=`${docs.length} document${docs.length===1?'':'s'}`;
+    const q=(search.value||'').toLowerCase();
+    list.innerHTML=docs.filter(d=>!q||`${d.name} ${d.category} ${d.application_id}`.toLowerCase().includes(q)).map(d=>`<button class="item${d.id===selected?' sel':''}" type="button" data-live-id="${d.id}"><strong>${esc(d.name)}</strong><br><span class="sm mut">${esc(d.application_id)}, ${esc(d.category)}</span><br><span class="tag">${esc(d.status)}</span> <span class="sm mut">version ${Number(d.current_version)||0}</span></button>`).join('')||`<p class="mut">${docs.length?'No matching documents.':'No documents yet.'}</p>`;
+  };
+  search.oninput=drawList;
+  list.onclick=e=>{const b=e.target.closest('[data-live-id]');if(b){selected=+b.dataset.liveId;drawList();show()}};
+
+  /* document detail */
+  const show=async()=>{
+    const detail=$('#live-detail',root);
+    if(!selected){detail.innerHTML='<p class="mut">Select a document.</p>';return}
+    const showing=selected;
+    detail.innerHTML='<p class="mut">Loading document…</p>';
+    let d;
+    try{d=await fetchDocument(showing)}catch(error){if(!stale()&&selected===showing)detail.innerHTML=`<p class="err">${esc(error.message)}</p>`;return}
+    if(stale()||selected!==showing)return;   // the user picked another document meanwhile
+    const canResolve=canResolveDoc(d);
+    detail.innerHTML=`<div class="card" style="margin:0"><div class="row h"><div><h3>${esc(d.name)}</h3><span class="sm mut">${esc(d.application_id)}, ${esc(d.category)}, uploaded by ${esc(d.owner_name||'not recorded')}</span></div><span class="tag">${esc(d.status)}</span></div>
+      <div class="row"><span><strong>Versions</strong><br><span class="sm mut">${d.versions.length} preserved version${d.versions.length===1?'':'s'}</span></span></div>
+      ${canUploadDoc(d)?'<label class="dropzone" id="live-dropzone" for="live-upload">Drop a file here or click to choose one<input id="live-upload" type="file" hidden></label><p class="sm mut" id="live-upload-status" aria-live="polite"></p>':''}
+      <div>${d.versions.map(v=>`<div class="row"><span>Version ${v.version}: ${esc(v.original_name)}<br><span class="sm mut">Uploaded by ${esc(v.uploader_name)}, ${esc(when(v.uploaded_at))}</span></span><span><a class="btn" href="/api/collaboration/documents/${d.id}/versions/${v.version}/download">Download</a>${/\.pdf$/i.test(v.original_name)?` <button class="btn p" type="button" data-open-pdf="/api/collaboration/documents/${d.id}/versions/${v.version}/preview" data-pdf-title="${esc(v.original_name)}">Open PDF</button>`:''}</span></div>`).join('')||'<p class="mut sm">No uploaded versions yet.</p>'}</div>
+      ${canAssignDoc(d)?`<details class="workspace-section"><summary><span>Assign contributor</span><span class="sm mut">Set permissions and deadline</span></summary><form id="document-assignment"><div class="form-grid"><select class="inp" id="assignment-user" name="user_id" aria-label="Contributor" required><option value="">Loading collaborators…</option></select><select class="inp" name="scope" aria-label="Part of the document"><option value="">All / General</option>${d.scope_options.map(s=>`<option>${esc(s)}</option>`).join('')}</select></div><div class="permission-row"><label><input type="checkbox" name="can_comment"> Can comment</label><label><input type="checkbox" name="can_edit"> Can edit PDF / upload</label><label>Deadline <input class="inp" name="due_at" type="datetime-local"></label><button class="btn p" type="submit">Save assignment</button></div></form></details>`:''}
+      <details class="workspace-section"><summary><span>Comments <span class="count">${d.comments.length}</span></span><span class="sm mut">Review and discuss this document</span></summary><div class="section-body">${d.comments.map(c=>`<div class="m"><span class="tag">${esc(c.author_name)} (${esc(c.author_role)})</span> <span class="sm mut">${esc(when(c.created_at))}${c.scope?', '+esc(c.scope):''}</span><br>${esc(c.body)} ${c.resolved_at?'· Resolved':(canResolve?`<button class="btn" type="button" data-resolve="${c.id}">Resolve</button>`:'')}</div>`).join('')||'<p class="mut sm">No comments yet.</p>'}
+      ${canCommentDoc(d)?commentForm('live-comment',d.scope_options).replace('class="send"','class="send" style="margin-top:10px"'):'<p class="mut sm">Commenting is not enabled for this contributor.</p>'}
+      ${isGuest?`<button class="btn p" type="button" data-submit-review="${d.id}" style="margin-top:10px">Send to PI for review</button>`:''}</div></details>
+      <details class="workspace-section"><summary><span>Activity <span class="count">${d.activity.length}</span></span><span class="sm mut">Document history</span></summary><div class="section-body">${d.activity.map(a=>`<div class="row"><span>${esc(human(a.event_type))}<br><span class="sm mut">${esc(a.actor_name||'System')}</span></span><span class="sm mut">${esc(when(a.created_at))}</span></div>`).join('')||'<p class="mut sm">No activity yet.</p>'}</div></details></div>`;
+    const refresh=async()=>{await reloadDocs();if(stale())return;drawList();await show()};
+
+    const dropzone=$('#live-dropzone',detail);
+    if(dropzone){
+      const status=$('#live-upload-status',detail);
+      const upload=async f=>{
+        if(!f)return;status.textContent=`Uploading ${f.name}…`;dropzone.classList.add('busy');
+        const form=new FormData();form.append('file',f);
+        try{
+          const response=await fetch(`/api/collaboration/documents/${d.id}/versions`,{method:'POST',body:form,credentials:'same-origin'});
+          if(!response.ok){status.textContent=await apiError(response);dropzone.classList.remove('busy');return}
+        }catch(err){status.textContent='Upload failed. Check your connection and try again.';dropzone.classList.remove('busy');return}
+        toast('Version uploaded');await refresh();
+      };
+      $('#live-upload',detail).onchange=e=>upload(e.target.files[0]);
+      ['dragenter','dragover'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.add('over')}));
+      ['dragleave','drop'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.remove('over')}));
+      dropzone.addEventListener('drop',e=>upload(e.dataTransfer.files[0]));
+    }
+    const commentFormEl=$('#live-comment',detail);
+    if(commentFormEl)commentFormEl.onsubmit=async e=>{e.preventDefault();$('button',commentFormEl).disabled=true;const response=await fetch(`/api/collaboration/documents/${d.id}/comments`,{method:'POST',body:new FormData(commentFormEl),credentials:'same-origin'});if(!response.ok){$('button',commentFormEl).disabled=false;toast(await apiError(response));return}await show()};
+    $$('[data-resolve]',detail).forEach(b=>b.onclick=async()=>{b.disabled=true;const response=await fetch(`/api/collaboration/documents/${d.id}/comments/${b.dataset.resolve}/resolve`,{method:'POST',credentials:'same-origin'});if(response.ok)await show();else{b.disabled=false;toast(await apiError(response))}});
+    $$('[data-submit-review]',detail).forEach(b=>b.onclick=async()=>{b.disabled=true;const response=await fetch(`/api/collaboration/documents/${b.dataset.submitReview}/submit-review`,{method:'POST',credentials:'same-origin'});toast(response.ok?'Sent to PI for review':await apiError(response));if(response.ok)await refresh();else b.disabled=false});
+    $$('[data-open-pdf]',detail).forEach(b=>b.onclick=()=>openPdfReview(d.id,b.dataset.openPdf,b.dataset.pdfTitle,()=>{if(!stale())show()}));
+    const assignment=$('#document-assignment',detail);
+    if(assignment){
+      const select=$('#assignment-user',detail),save=$('button[type=submit]',assignment);
+      try{
+        const guests=await fetch(`/api/collaboration/application-guests?application_id=${encodeURIComponent(d.application_id)}`,{credentials:'same-origin'});
+        if(!guests.ok)throw new Error(await apiError(guests));
+        const users=await guests.json();
+        select.innerHTML=users.length?users.map(u=>`<option value="${u.id}">${esc(u.display_name)} · ${esc(u.email)}</option>`).join(''):'<option value="">No verified guests yet</option>';
+        select.disabled=save.disabled=!users.length;
+      }catch(error){select.innerHTML=`<option value="">${esc(error.message)}</option>`;select.disabled=save.disabled=true}
+      assignment.onsubmit=async e=>{
+        e.preventDefault();
+        const f=new FormData(assignment);
+        f.set('can_comment',assignment.elements.can_comment.checked?'true':'false');
+        f.set('can_edit',assignment.elements.can_edit.checked?'true':'false');
+        save.disabled=true;
+        const response=await fetch(`/api/collaboration/documents/${d.id}/collaborators`,{method:'POST',body:f,credentials:'same-origin'});
+        toast(response.ok?'Contributor assignment saved':await apiError(response));
+        if(response.ok)await show();else save.disabled=false;
+      };
+    }
+  };
+  drawList();
+  await show();
 }
 
 /* ---------- PI page ---------- */
-const pi={tab:'req',lay:'A',open:false};
-const piChat=makeChat('chat-pi','👋 Hi! How can I help you today? I can start a new application with you step by step, build your team, or check requirements, budgets, formatting and deadlines.');
+let ME=null;
+let MY_APPS=null;   // the signed-in investigator's real applications (from the API)
+const pi={tab:'col',lay:'A',open:false};
+const piChat=makeChat('chat-pi','👋 Hi! How can I help you today? I can start a new application with you step by step, build your team, make a budget spreadsheet, or check requirements, CVs, formatting and deadlines.');
 const left=()=>REQ.reduce((a,r)=>a+r.items.filter(i=>!i.done).length,0);
 const doneN=()=>REQ.reduce((a,r)=>a+r.items.filter(i=>i.done).length,0);
 const myCol=role=>COL.filter(c=>c.turn===role).length;
 function renderReq(){
-  $('#p-req').innerHTML=REQ.map(r=>{const rest=r.items.filter(i=>!i.done);return `<div class="card"><div class="row h"><div><h3>${r.id}</h3><span class="sm mut">${r.src} · ${r.items.length-rest.length} of ${r.items.length} complete</span></div><span class="tag">${r.status}</span></div>
+  $('#p-req').innerHTML=REQ.map(r=>{const rest=r.items.filter(i=>!i.done);return `<div class="card"><div class="row h"><div><h3>${r.id}</h3><span class="sm mut">${r.src}, ${r.items.length-rest.length} of ${r.items.length} complete</span></div>${statusTag(r.status)}</div>
    <div class="sm mut" style="margin:10px 0 2px">${rest.length?'Requirements left to complete':'All requirements complete: see Ready to submit'}</div>
    ${rest.map(i=>`<label class="row"><span>${i.n}</span><span class="sm"><input type="checkbox" data-r="${r.id}" data-n="${i.n}"> Mark completed</span></label>`).join('')}</div>`}).join('');
 }
 function renderReady(){
-  $('#p-ready').innerHTML=REQ.map(r=>{const d=r.items.filter(i=>i.done),all=d.length===r.items.length&&['Incomplete','Changes requested'].includes(r.status);
+  $('#p-ready').innerHTML=previewNote('The application cards below use sample data, and sending to SPS here is not saved. Uploading a new document at the bottom of this page is real.')+REQ.map(r=>{const d=r.items.filter(i=>i.done),all=d.length===r.items.length&&['Incomplete','Changes requested'].includes(r.status);
    return `<div class="card"><div class="row h"><h3>${r.id}</h3><button class="btn p" data-send="${r.id}" ${all?'':'disabled'}>Send to SPS for review</button></div>
    ${d.length?d.map(i=>`<div class="row"><span>${i.n}</span><span><button class="btn" data-toast="Viewing documents">View</button> <button class="btn" data-back="${r.id}|${i.n}">Move back</button></span></div>`).join(''):'<p class="mut sm">No completed documents yet. Mark them completed on the Requests tab.</p>'}</div>`}).join('')+`<div class="card"><h3>Upload a new document</h3><p class="sm mut">Choose an application, enter document details, then drop a file below.</p>
-   <div class="row"><select class="inp" id="new-doc-app">${REQ.map(r=>`<option value="${r.id}">${r.id}</option>`).join('')}</select><input class="inp" id="new-doc-name" placeholder="Document name" maxlength="200"><input class="inp" id="new-doc-category" placeholder="Category, e.g. IRB" maxlength="80"></div>
-   <label class="dropzone" id="new-doc-drop">Drop a new document here or click to choose one<input id="new-doc-file" type="file" hidden></label><p class="sm mut" id="new-doc-status"></p></div>`;
+   <div class="form-grid upload-grid"><label class="field"><span>Application</span><select class="inp" id="new-doc-app">${MY_APPS===null?'<option value="">Loading…</option>':MY_APPS.map(a=>`<option value="${esc(a.id)}"${a.id===pi.app?' selected':''}>${esc(a.id)}: ${esc(a.title)}</option>`).join('')||'<option value="">No applications yet</option>'}</select></label><label class="field"><span>Document name</span><input class="inp" id="new-doc-name" maxlength="200"></label><label class="field"><span>Category</span><input class="inp" id="new-doc-category" placeholder="For example, IRB" maxlength="80"></label></div>
+   <label class="dropzone" id="new-doc-drop">Drop a new document here or click to choose one<input id="new-doc-file" type="file" hidden></label><p class="sm mut" id="new-doc-status" aria-live="polite"></p></div>`;
   const drop=$('#new-doc-drop'), input=$('#new-doc-file');
-  const submit=async file=>{if(!file)return;const form=new FormData();form.append('application_id',$('#new-doc-app').value);form.append('name',$('#new-doc-name').value.trim()||file.name);form.append('category',$('#new-doc-category').value.trim()||'Other');form.append('file',file);$('#new-doc-status').textContent='Uploading...';const response=await fetch('/api/collaboration/documents',{method:'POST',body:form,credentials:'same-origin'});if(!response.ok){$('#new-doc-status').textContent=await response.text();return}$('#new-doc-status').textContent='Uploaded successfully. Open Collaboration to view it.';toast('Document uploaded')};
+  const submit=async file=>{
+    const status=$('#new-doc-status');if(!file)return;
+    if(!$('#new-doc-app').value){status.textContent='Choose an application first.';return}
+    const form=new FormData();form.append('application_id',$('#new-doc-app').value);form.append('name',$('#new-doc-name').value.trim()||file.name);form.append('category',$('#new-doc-category').value.trim()||'Other');form.append('file',file);
+    status.textContent=`Uploading ${file.name}…`;drop.classList.add('busy');
+    let response;
+    try{response=await fetch('/api/collaboration/documents',{method:'POST',body:form,credentials:'same-origin'})}
+    catch(err){status.textContent='Upload failed. Check your connection and try again.';drop.classList.remove('busy');return}
+    drop.classList.remove('busy');input.value='';
+    if(!response.ok){status.textContent=await apiError(response);return}
+    pi.app=form.get('application_id');
+    status.textContent='Uploaded. You can find it on the Collaboration tab.';toast('Document uploaded');piCol()};
   input.onchange=e=>submit(e.target.files[0]);
   ['dragenter','dragover'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.add('over')}));
   ['dragleave','drop'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.remove('over')}));
   drop.addEventListener('drop',e=>submit(e.dataTransfer.files[0]));
 }
 function drawPI(focus){
-  const items=[['req','Requests',left()],['dl','Deadlines'],['ready','Ready to submit',doneN()],['col','Collaboration',myCol('PI')]];
+  const items=ME?.role==='guest'?[['col','Collaboration'],['dl','Deadlines']]:[['col','Collaboration'],['req','Requests',left()],['dl','Deadlines'],['ready','Ready to submit',doneN()]];
   if(pi.tab==='chat')pi.tab='req';
-  drawTabs($('#p-tabs'),items,pi.tab,id=>{pi.tab=id;drawPI()});
+  drawTabs($('#p-tabs'),items,pi.tab,id=>{pi.tab=id;drawPI()},id=>'pn-'+id);
   ['req','dl','ready','col','chat'].forEach(id=>$('#pn-'+id).hidden=id!==pi.tab);
   $('#pi-wrap').className='pi-wrap lay-'+pi.lay;
   $('#dock').append(piChat);
   $('#drawer').hidden=true;$('#fab').hidden=true;
   piChat.setAbout((items.find(i=>i[0]===pi.tab)||[])[1]||'');
   if(focus)$('.tab[aria-selected=true]',$('#p-tabs')).focus();
+  if(pi.tab==='dl'){
+    cal($('#p-cal'),ME?.role==='guest'?ME.application_id:null);
+    loadAssignedDeadlines($('#p-mydl'),ME?.role==='guest'?ME.application_id:null);
+  }
 }
 function refreshPI(){renderReq();renderReady();drawPI()}
 $('#p-req').onchange=e=>{const c=e.target.closest('[data-r]');if(!c)return;REQ.find(r=>r.id===c.dataset.r).items.find(i=>i.n===c.dataset.n).done=true;refreshPI();syncStaff();toast('Moved to Ready to submit')};
 $('#p-ready').onclick=e=>{const s=e.target.closest('[data-send]'),b=e.target.closest('[data-back]');
   if(s){REQ.find(r=>r.id===s.dataset.send).status='In review by SPS';refreshPI();syncStaff();toast('Sent to SPS (sample data only)')}
   if(b){const[id,n]=b.dataset.back.split('|');REQ.find(r=>r.id===id).items.find(i=>i.n===n).done=false;refreshPI();syncStaff()}};
-const piCol=()=>liveCollaboration($('#p-col'),'PI',null);
-renderReq();renderReady();cal($('#p-cal'));piCol();drawPI();
+const piCol=()=>{
+  if(ME?.role==='guest')return liveCollaboration($('#p-col'),'Guest',ME.application_id);
+  if(MY_APPS===null)return loadMyApps().then(piCol);
+  if(!MY_APPS.length){stopLive('view-pi');$('#p-col').innerHTML='<p class="mut">You have no applications yet.</p>';return}
+  if(!MY_APPS.some(a=>a.id===pi.app))pi.app=MY_APPS[0].id;
+  return liveCollaboration($('#p-col'),'PI',pi.app,null,MY_APPS,id=>{pi.app=id;piCol()});
+};
+async function loadMyApps(){
+  try{const r=await fetch('/api/collaboration/applications',{credentials:'same-origin'});MY_APPS=r.ok?await r.json():[]}catch(e){MY_APPS=[]}
+  renderReady();
+}
+renderReq();renderReady();cal($('#p-cal'));   // sample content only; real data loads in boot() after sign-in
 
 /* ---------- Staff page (SPS and Laura) ---------- */
-const st={top:'req',inner:'ov',sel:0,filt:'All'};
-const sChat=makeChat('chat-staff','👋 Hi! How can I help you today? Ask about any request, its team, requirements, budget, compliance or deadlines.');
+const st={top:'req',inner:'ov',sel:null,filt:'All',apps:[]};
+const sChat=makeChat('chat-staff','👋 Hi! How can I help you today? Ask about any application, who has sent their CV, budgets, compliance or deadlines.');
 $('#s-chat').append(sChat);
-function renderStaff(){
-  const stats=['All',...new Set(REQ.map(r=>r.status))];
-  $('#s-chips').innerHTML=stats.map(s=>`<button class="chip" data-s="${s}" aria-pressed="${st.filt===s}">${s}</button>`).join('');
-  $('#s-list').innerHTML=REQ.map((r,i)=>({r,i})).filter(({r})=>st.filt==='All'||r.status===st.filt).map(({r,i})=>`<button class="item${i===st.sel?' sel':''}" data-i="${i}"><strong>${r.id}</strong><br><span class="sm mut">${r.pi}</span><br><span class="tag">${r.status}</span></button>`).join('');
-  const r=REQ[st.sel];$('#s-title').textContent=r.id+' · '+r.pi;$('#s-status').textContent=r.status;
-  drawTabs($('#s-inner'),[['ov','Overview'],['docs','Documents',r.items.filter(i=>!i.done).length||null],['col','Collaboration',COL.filter(c=>c.req===r.id&&c.turn==='SPS').length||null],['act','Activity']],st.inner,id=>{st.inner=id;renderStaff()});
-  const p=$('#s-panel'),nxt=DL.filter(x=>x.r===r.id&&x.t==='sub')[0];
-  if(st.inner==='ov')p.innerHTML=`<div class="card"><h2>Grant info</h2><div class="info"><div>Announcement number<br><strong>${r.id}</strong></div><div>Funding source<br><strong>${r.src}</strong></div><div>Investigator<br><strong>${r.pi}</strong></div><div>Department<br><strong>[Department]</strong></div><div>Submission deadline<br><strong>${nxt?fmt(nxt.d):'[Date]'}</strong></div><div>Budget total<br><strong>[Amount]</strong></div></div><p class="sm mut" style="margin:12px 0 0">${r.items.filter(i=>i.done).length} of ${r.items.length} requirements submitted</p></div>`;
-  if(st.inner==='docs')p.innerHTML=`<div class="card"><h2>Documents</h2>${r.items.map(i=>`<div class="row"><span>${i.n}<br><span class="sm mut">${i.done?'Submitted [date]':'Not yet submitted'}</span></span><span class="tag">${i.done?'Submitted':'Missing'}</span><button class="btn" data-toast="Viewing documents">View</button></div>`).join('')}</div>`;
-  if(st.inner==='col'){p.innerHTML='<div class="card" id="s-col1"></div>';liveCollaboration($('#s-col1'),'SPS',r.id)}
-  if(st.inner==='act')p.innerHTML=`<div class="card"><h2>Activity</h2>${r.act.map(a=>`<div class="row">${esc(a)}</div>`).join('')}</div>`;
-  sChat.setAbout(r.id+' ('+r.pi+')');
-  drawTabs($('#s-tabs'),[['req','Requests',REQ.filter(x=>x.status==='In review by SPS').length],['col','Collaboration',myCol('SPS')],['dl','Deadlines']],st.top,id=>{st.top=id;renderStaff()});
-  ['req','col','dl'].forEach(id=>$('#sn-'+id).hidden=id!==st.top);
+
+async function setApplicationStatus(status){
+  const app=st.apps.find(a=>a.id===st.sel);
+  if(!app)return;
+  const form=new FormData();form.set('status',status);
+  const response=await fetch(`/api/collaboration/applications/${encodeURIComponent(app.id)}/status`,{
+    method:'POST',body:form,credentials:'same-origin'
+  });
+  if(!response.ok){toast(await apiError(response));return}
+  toast(`Application marked ${status}`);
+  await renderStaff();
 }
-function syncStaff(){renderStaff();liveCollaboration($('#s-colall'),'SPS',null)}
+
+async function renderStaff(){
+  const list=$('#s-list'),panel=$('#s-panel');
+  if(!list||!panel)return;
+  list.innerHTML='<p class="mut sm">Loading applications…</p>';
+  try{
+    const response=await fetch('/api/collaboration/applications',{credentials:'same-origin'});
+    if(!response.ok)throw new Error('Unable to load applications');
+    st.apps=await response.json();
+    if(st.sel&&!st.apps.some(a=>a.id===st.sel))st.sel=null;
+    const selected=st.apps.find(a=>a.id===st.sel)||st.apps[0]||null;
+    st.sel=selected?.id||null;
+
+    drawTabs($('#s-tabs'),[['req','Applications'],['dl','Deadlines']],st.top,id=>{st.top=id;renderStaff()},id=>'sn-'+id);
+    $('#sn-req').hidden=st.top!=='req';
+    $('#sn-dl').hidden=st.top!=='dl';
+    if(st.top==='dl'){stopLive('view-staff');cal($('#s-cal'));sChat.setAbout('Deadlines');return}
+    if(!selected){
+      $('#s-count').textContent='0';
+      $('#s-chips').innerHTML='';
+      list.innerHTML='<p class="mut sm">No applications are available for your account.</p>';
+      $('#s-title').textContent='No applications';
+      $('#s-subtitle').textContent='';
+      $('#s-status').textContent='';delete $('#s-status').dataset.status;
+      $('#s-chg').disabled=true;$('#s-ok').disabled=true;
+      $('#s-inner').innerHTML='';
+      panel.innerHTML='';
+      return;
+    }
+
+    $('#s-count').textContent=st.apps.length;
+    const filters=['All',...new Set(st.apps.map(a=>a.status))];
+    if(!filters.includes(st.filt))st.filt='All';
+    $('#s-chips').innerHTML=filters.map(f=>`<button class="chip" data-s="${esc(f)}" aria-pressed="${st.filt===f}">${esc(f==='All'?'All':statusLabel(f))}</button>`).join('');
+    list.innerHTML=st.apps.filter(a=>st.filt==='All'||a.status===st.filt).map(a=>`
+      <button class="item${a.id===st.sel?' sel':''}" data-app-id="${esc(a.id)}">
+        <strong>${esc(a.id)}</strong>
+        <span class="app-title">${esc(a.title)}</span>
+        <span class="sm mut">${esc(a.owner_name||a.owner_login_id||'Investigator')}</span>
+        <br>${statusTag(a.status)}
+      </button>`).join('')||'<p class="mut sm">No applications match this filter.</p>';
+
+    $('#s-title').textContent=selected.title||selected.id;
+    $('#s-subtitle').textContent=`${selected.id}, investigator ${selected.owner_name||selected.owner_login_id||'not listed'}`;
+    $('#s-status').textContent=statusLabel(selected.status);$('#s-status').dataset.status=selected.status;
+    $('#s-chg').disabled=false;$('#s-ok').disabled=false;
+    drawTabs($('#s-inner'),[['ov','Overview'],['docs','Documents',selected.document_count||null],['col','Collaboration'],['act','Activity']],st.inner,id=>{st.inner=id;renderStaff()},()=>'s-panel');
+    sChat.setAbout(selected.title||selected.id);
+    if(st.inner!=='col')stopLive('view-staff');
+
+    if(st.inner==='ov'){
+      panel.innerHTML=`<div class="card"><h2>Application overview</h2>
+        <div class="info">
+          <div>Application ID<br><strong>${esc(selected.id)}</strong></div>
+          <div>Investigator<br><strong>${esc(selected.owner_name||selected.owner_login_id||'Not available')}</strong></div>
+          <div>Application title<br><strong>${esc(selected.title||'Untitled application')}</strong></div>
+          <div>Review status<br><strong>${esc(statusLabel(selected.status))}</strong></div>
+          <div>Documents<br><strong>${Number(selected.document_count||0)}</strong></div>
+          <div>Last updated<br><strong>${esc(when(selected.updated_at)||'Not available')}</strong></div>
+        </div></div>`;
+    }else if(st.inner==='docs'){
+      panel.innerHTML='<div class="card"><h2>Application documents</h2><p class="mut sm">Choose a document to open its versions, assignments, comments, and activity in Collaboration.</p><div id="s-doc-list"><p class="mut sm">Loading documents…</p></div></div>';
+      const docsResponse=await fetch(`/api/collaboration/documents?application_id=${encodeURIComponent(selected.id)}`,{credentials:'same-origin'});
+      if(!docsResponse.ok)throw new Error(await apiError(docsResponse));
+      const docs=await docsResponse.json();
+      const docsRoot=$('#s-doc-list',panel);
+      docsRoot.innerHTML=docs.map(d=>`<button class="item" data-open-doc="${d.id}"><strong>${esc(d.name)}</strong><br><span class="sm mut">${esc(d.category)}, version ${d.current_version}</span><br><span class="tag">${esc(d.status)}</span></button>`).join('')||'<p class="mut sm">No documents have been uploaded for this application yet.</p>';
+      $$('[data-open-doc]',docsRoot).forEach(b=>b.onclick=()=>{st.docId=Number(b.dataset.openDoc);st.inner='col';renderStaff()});
+    }else if(st.inner==='col'){
+      panel.innerHTML='<div class="card" id="s-col1"></div>';
+      await liveCollaboration($('#s-col1'),'SPS',selected.id,st.docId||null);
+    }else if(st.inner==='act'){
+      panel.innerHTML='<div class="card"><h2>Application activity</h2><div id="s-activity"><p class="mut sm">Loading activity…</p></div></div>';
+      const activityResponse=await fetch(`/api/collaboration/activity?application_id=${encodeURIComponent(selected.id)}`,{credentials:'same-origin'});
+      if(!activityResponse.ok)throw new Error(await apiError(activityResponse));
+      const events=await activityResponse.json();
+      $('#s-activity',panel).innerHTML=events.map(a=>`<div class="row"><span><strong>${esc(human(a.event_type))}</strong><br><span class="sm mut">${esc(a.actor_name||'System')}</span></span><span class="sm mut">${esc(when(a.created_at))}</span></div>`).join('')||'<p class="mut sm">No activity has been recorded yet.</p>';
+    }
+  }catch(error){
+    if(!st.apps.length)list.innerHTML='<p class="err">Applications could not be loaded.</p>';
+    panel.innerHTML=`<p class="err">${esc(error.message)}</p><button class="btn" type="button" data-staff-retry>Try again</button>`;
+    $('[data-staff-retry]',panel).onclick=()=>renderStaff();
+  }
+}
 $('#s-chips').onclick=e=>{const c=e.target.closest('[data-s]');if(c){st.filt=c.dataset.s;renderStaff()}};
-$('#s-list').onclick=e=>{const b=e.target.closest('[data-i]');if(b){st.sel=+b.dataset.i;renderStaff()}};
-function setStatus(s){const r=REQ[st.sel];r.status=s;r.act.unshift(new Date().toLocaleDateString()+' · [Staff name]: '+s);syncStaff();refreshPI();toast(s+' (sample data only)')}
-$('#s-ok').onclick=()=>setStatus('Approved');$('#s-chg').onclick=()=>setStatus('Changes requested');
-cal($('#s-cal'));syncStaff();
+$('#s-list').onclick=e=>{const b=e.target.closest('[data-app-id]');if(b){st.sel=b.dataset.appId;st.inner='ov';renderStaff()}};
+$('#s-ok').onclick=()=>setApplicationStatus('Approved');
+$('#s-chg').onclick=()=>setApplicationStatus('Changes requested');
+function syncStaff(){if(ME?.role==='sps')renderStaff()}   // PI sample-data clicks must not call staff APIs
+cal($('#s-cal'));
 
 /* ---------- sign-in state and navigation ---------- */
-let ME=null;
 const ERR={not_allowed:'Your account is not on the approved list for this app. Ask your team to add you.',wrong_entrance:'Your account is a different type. Use the other sign-in card.',failed:'Sign-in did not complete. Please try again.'};
 function route(){
   const v=(location.hash||'#login').slice(1);
-  let n=['pi','staff'].includes(v)?v:'login';
-  const home=ME&&(ME.role==='sps'?'staff':'pi');
+  let n=['pi','staff','guest'].includes(v)?v:'login';
+  const home=ME&&(ME.role==='sps'?'staff':ME.role==='guest'?'guest':'pi');
   if(!ME)n='login';else if(n!==home)n=home;   // convenience only: the backend enforces roles
   if(location.hash!=='#'+n)history.replaceState(null,'','#'+n);
-  ['login','pi','staff'].forEach(x=>$('#view-'+x).hidden=x!==n);
-  if(ME){$('#pi-who').textContent=ME.name+' · Investigator';$('#st-who').textContent=ME.name+' · SPS / Laura'}
+  ['login','pi','staff'].forEach(x=>{
+    const visible=x==='pi'?(n==='pi'||n==='guest'):x===n;
+    $('#view-'+x).hidden=!visible;
+  });
+  if(ME){
+    $('#pi-who').textContent=ME.role==='guest'?ME.name+', invited collaborator':ME.name+', investigator';
+    $('#st-who').textContent=ME.name+', SPS staff'
+  }
   const e=new URLSearchParams(location.search).get('login_error'),box=$('#login-err');
   box.hidden=!(n==='login'&&e&&ERR[e]);box.textContent=ERR[e]||'';
   scrollTo(0,0);
 }
-async function boot(){try{const r=await fetch('/api/me',{credentials:'same-origin'});ME=r.ok?await r.json():null}catch(e){ME=null}route();if(ME)refreshTeams()}
-async function signOut(){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(e){}ME=null;history.replaceState(null,'','/#login');route()}
+async function boot(){
+  try{const r=await fetch('/api/me',{credentials:'same-origin'});ME=r.ok?await r.json():null}catch(e){ME=null}
+  route();
+  if(!ME)return;
+  refreshTeams();
+  if(ME.role==='sps')renderStaff();
+  else{drawPI();piCol()}
+}
+async function signOut(){
+  Object.keys(LIVE).forEach(stopLive);
+  try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(e){}
+  ME=null;history.replaceState(null,'','/#login');location.reload();   // a fresh page: no documents or connections left behind
+}
 addEventListener('hashchange',route);boot();
-document.addEventListener('click',e=>{if(e.target.closest('[data-signout]'))signOut();const t=e.target.closest('[data-toast]');if(t)toast(t.dataset.toast+' is not connected yet (layout only)')});
+document.addEventListener('click',e=>{if(e.target.closest('[data-signout]'))signOut();const t=e.target.closest('[data-toast]');if(t)toast('Preview only: '+t.dataset.toast.toLowerCase()+' is not connected yet')});
 </script>
 </body>
 </html>

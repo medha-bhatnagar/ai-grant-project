@@ -24,6 +24,12 @@ services:
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       OIDC_USER_CLAIM: ${OIDC_USER_CLAIM:-preferred_username}
+      GRAPH_TENANT_ID: ${GRAPH_TENANT_ID:-}                  # Microsoft Graph mail (guest codes)
+      GRAPH_CLIENT_ID: ${GRAPH_CLIENT_ID:-}
+      GRAPH_CLIENT_SECRET: ${GRAPH_CLIENT_SECRET:-}
+      GRAPH_SENDER_EMAIL: ${GRAPH_SENDER_EMAIL:-}
+      GUEST_INVITATION_HOURS: ${GUEST_INVITATION_HOURS:-72}
+      GUEST_CODE_MINUTES: ${GUEST_CODE_MINUTES:-10}
       MONGO_DB: ${MONGO_DB:-grants}                          # the Judge's own database; never grant_rag
       MONGO_URL: ${MONGO_URL:-}                              # optional: a database address with a password
       CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}  # from `claude setup-token`, kept in .env

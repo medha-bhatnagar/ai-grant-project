@@ -1,6 +1,7 @@
-"""The backend. Run it from the backend/ folder:  uvicorn app.main:app --reload --port 8000"""
+"""The backend. Run it from the repo root:  uvicorn backend.main:app --reload --port 8000"""
 from contextlib import asynccontextmanager
 from html import escape
+import json
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -44,6 +45,8 @@ def current_user(request: Request):
     user = db.user_for_session(token) if token else None
     if not user:
         raise HTTPException(401, "Not signed in")
+    if user["role"] == "guest":
+        user["guest_permissions"] = db.guest_permissions(user["id"], user["session_application_id"])
     return user
 
 
@@ -59,7 +62,8 @@ def require_role(*roles):
 # ---------- sign-in ----------
 def finish(request: Request, who, provider):
     """The provider said who this is. Now: are they on the guest list, and did they use the right entrance?"""
-    entrance = request.session.pop("as", "pi")
+    # demo: keep the entrance so several sign-ins in a row behave; real providers still use it once
+    entrance = request.session.get("as", "pi") if provider == "demo" else request.session.pop("as", "pi")
     wanted = "sps" if entrance == "staff" else "pi"
     user = db.find_user(who["login_id"], who.get("email"))
     if not user:
@@ -104,20 +108,67 @@ async def callback(request: Request, ticket: str | None = None):
 
 
 @app.get("/auth/demo", response_class=HTMLResponse)
-def demo_page():
+def demo_page(request: Request):
     if config.AUTH_PROVIDER != "demo":
         raise HTTPException(404)
+    wanted = "sps" if request.session.get("as") == "staff" else "pi"   # only offer users this entrance accepts
     with db.db() as con:
-        rows = con.execute("SELECT login_id, display_name, role FROM users WHERE active=1 ORDER BY role, login_id").fetchall()
+        rows = con.execute("SELECT login_id, display_name, role FROM users WHERE active=1 AND (role=? OR role='guest') ORDER BY role, login_id", (wanted,)).fetchall()
     items = "".join(f'<li><a href="/auth/demo/login?login_id={escape(r["login_id"])}">{escape(r["display_name"])}</a> ({r["role"]})</li>' for r in rows)
-    return f"<h1>Demo sign-in (local development only)</h1><p>Pick a person. Real UConn sign-in replaces this page.</p><ul>{items}</ul>"
+    return f"<h1>Demo sign-in (local development only)</h1><p>PI and SPS users use institutional-style demo cards. Guest collaborators use their verified guest card below.</p><ul>{items}</ul>"
 
 
 @app.get("/auth/demo/login")
 def demo_login(request: Request, login_id: str):
     if config.AUTH_PROVIDER != "demo":
         raise HTTPException(404)
+    user = db.find_user(login_id.lower())
+    if not user:
+        raise HTTPException(404)
+    if user["role"] == "guest":
+        with db.db() as con:
+            invitation = con.execute(
+                """SELECT application_id FROM guest_invitations
+                   WHERE email=? AND verified_at IS NOT NULL AND revoked_at IS NULL
+                   ORDER BY verified_at DESC LIMIT 1""",
+                (user["email"],),
+            ).fetchone()
+        if not invitation:
+            raise HTTPException(403, "This guest account has no active application invitation")
+        token = db.create_guest_session(user["id"], invitation["application_id"])
+        db.log_event("demo", user["login_id"], True, "demo guest collaborator")
+        resp = RedirectResponse("/#guest", 303)
+        resp.set_cookie("session", token, httponly=True, samesite="lax",
+                        secure=config.COOKIE_SECURE,
+                        max_age=config.SESSION_HOURS * 3600)
+        return resp
     return finish(request, {"login_id": login_id.lower(), "email": ""}, "demo")
+
+
+@app.get("/auth/guest", response_class=HTMLResponse)
+def guest_login():
+    return HTMLResponse("""<!doctype html><title>Guest invitation</title>
+    <style>body{font-family:system-ui;margin:40px;max-width:560px} #status{padding:12px;border:1px solid #d5dae1;border-radius:8px} #status code{display:block;font-size:28px;font-weight:700;margin-top:6px;letter-spacing:4px} form{display:flex;flex-direction:column;gap:12px;margin:20px 0} input,button{padding:10px;font:inherit}</style>
+    <h1>Guest invitation</h1><p id="status">Requesting your local demo verification code...</p>
+    <form id="guest"><input type="hidden" name="token"><label>Name (optional)
+    <input name="display_name" maxlength="200"></label><label>Verification code
+    <input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label>
+    <button>Verify and continue</button></form>
+    <button id="send" type="button">Send a new code</button>
+    <script>
+    const token=new URLSearchParams(location.search).get('token')||'';
+    document.querySelector('[name=token]').value=token;
+    async function send(){const f=new FormData();f.append('token',token);
+      const r=await fetch('/api/collaboration/guest/request-code',{method:'POST',body:f});
+      const d=await r.json();const status=document.querySelector('#status');
+      if(d.development_code){status.innerHTML='Local demo verification code:<code>'+d.development_code+'</code>Enter this code below.';
+      const code=document.querySelector('[name=code]');code.value=d.development_code;code.focus();}
+      else status.textContent=d.message||d.detail||'Unable to send code';}
+    document.querySelector('#send').onclick=send;
+    document.querySelector('#guest').onsubmit=async e=>{e.preventDefault();const r=await fetch('/api/collaboration/guest/verify',{method:'POST',body:new FormData(e.target)});
+      if(r.ok){const d=await r.json();location.href='/#guest';}else document.querySelector('#status').textContent=(await r.json()).detail||'Verification failed';};
+    if(token)send();else document.querySelector('#status').textContent='Open the complete invitation link from your email.';
+    </script>""")
 
 
 @app.post("/auth/logout")
@@ -133,23 +184,44 @@ def logout(request: Request):
 # ---------- API (every one of these checks who you are) ----------
 @app.get("/api/me")
 def me(user=Depends(current_user)):
-    return {"login_id": user["login_id"], "name": user["display_name"], "email": user["email"], "role": user["role"]}
-
-
-SAMPLE = [{"id": "SAMPLE-001", "owner": "pi.demo1", "status": "Incomplete"},
-          {"id": "SAMPLE-002", "owner": "pi.demo2", "status": "In review by SPS"},
-          {"id": "SAMPLE-003", "owner": "pi.demo1", "status": "Incomplete"}]
+    result = {"id": user["id"], "login_id": user["login_id"], "name": user["display_name"],
+              "email": user["email"], "role": user["role"]}
+    if user["role"] == "guest":
+        result["guest_permissions"] = user.get("guest_permissions", [])
+        result["application_id"] = user.get("session_application_id")
+    return result
 
 
 @app.get("/api/requests")
 def requests_list(user=Depends(current_user)):
-    """A PI only ever gets their own requests. SPS gets all of them. The page cannot change this."""
-    return SAMPLE if user["role"] == "sps" else [r for r in SAMPLE if r["owner"] == user["login_id"]]
+    """Return real application records, scoped to the signed-in user's permissions."""
+    with db.db() as con:
+        base = """SELECT a.id, a.title, a.status, a.owner_user_id, a.created_at, a.updated_at,
+                         u.login_id AS owner_login_id, u.display_name AS owner_name
+                  FROM applications a JOIN users u ON u.id=a.owner_user_id"""
+        if user["role"] == "sps":
+            rows = con.execute(base + " ORDER BY a.updated_at DESC").fetchall()
+        elif user["role"] == "guest":
+            rows = con.execute(
+                base + " WHERE a.id=? ORDER BY a.updated_at DESC",
+                (user.get("session_application_id"),),
+            ).fetchall()
+        else:
+            rows = con.execute(
+                base + " WHERE a.owner_user_id=? ORDER BY a.updated_at DESC",
+                (user["id"],),
+            ).fetchall()
+    return [dict(row) for row in rows]
 
 
 @app.get("/api/staff/overview")
 def staff_overview(user=Depends(require_role("sps"))):
-    return {"total": len(SAMPLE), "in_review": sum(r["status"] == "In review by SPS" for r in SAMPLE)}
+    with db.db() as con:
+        total = con.execute("SELECT COUNT(*) FROM applications").fetchone()[0]
+        in_review = con.execute(
+            "SELECT COUNT(*) FROM applications WHERE status='In review by SPS'"
+        ).fetchone()[0]
+    return {"total": total, "in_review": in_review}
 
 
 @app.get("/api/health")
@@ -166,5 +238,16 @@ from .assistant import router as assistant_router  # the AI Judge chat (signed-i
 app.include_router(assistant_router)
 
 
+class FrontendFiles(StaticFiles):
+    """Serve only page assets. Defense in depth: even if FRONTEND_DIR is ever pointed at a folder that also
+    holds Python code, the allowed-users list or backups, anything that is not a web asset type gets a 404."""
+    WEB_ASSETS = {".html", ".css", ".js", ".woff2", ".svg", ".png", ".ico", ".webp"}
+
+    async def get_response(self, path, scope):
+        if path not in ("", ".") and Path(path).suffix.lower() not in self.WEB_ASSETS:
+            raise HTTPException(404)
+        return await super().get_response(path, scope)
+
+
 if Path(config.FRONTEND_DIR).is_dir():  # last, so it never hides the routes above
-    app.mount("/", StaticFiles(directory=config.FRONTEND_DIR, html=True), name="frontend")
+    app.mount("/", FrontendFiles(directory=config.FRONTEND_DIR, html=True), name="frontend")

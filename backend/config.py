@@ -32,9 +32,15 @@ ALLOWED_UPLOAD_EXTENSIONS = {
 SESSION_HOURS = int(os.environ.get("SESSION_HOURS", "8"))
 SESSION_SECRET = secret("SESSION_SECRET", "dev-only-change-me")
 COOKIE_SECURE = PUBLIC_URL.startswith("https://")
+GUEST_INVITATION_HOURS = int(os.environ.get("GUEST_INVITATION_HOURS", "72"))
+GUEST_CODE_MINUTES = int(os.environ.get("GUEST_CODE_MINUTES", "10"))
 
 CAS_SERVER_URL = os.environ.get("CAS_SERVER_URL", "").rstrip("/")  # from UConn IT
 OIDC_METADATA_URL = os.environ.get("OIDC_METADATA_URL", "")  # from UConn IT (Entra)
 OIDC_CLIENT_ID = os.environ.get("OIDC_CLIENT_ID", "")
 OIDC_CLIENT_SECRET = secret("OIDC_CLIENT_SECRET")
 OIDC_USER_CLAIM = os.environ.get("OIDC_USER_CLAIM", "preferred_username")
+GRAPH_TENANT_ID = os.environ.get("GRAPH_TENANT_ID", "")
+GRAPH_CLIENT_ID = os.environ.get("GRAPH_CLIENT_ID", "")
+GRAPH_CLIENT_SECRET = secret("GRAPH_CLIENT_SECRET")
+GRAPH_SENDER_EMAIL = os.environ.get("GRAPH_SENDER_EMAIL", "")

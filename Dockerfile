@@ -24,8 +24,9 @@ COPY backend/requirements.txt backend-requirements.txt
 COPY judge/requirements.txt judge-requirements.txt
 RUN pip install --no-cache-dir -r backend-requirements.txt -r judge-requirements.txt
 
-# Runs as a normal user, not root.
-RUN addgroup --system app && adduser --system --ingroup app --home /home/app app
+# Runs as a normal user, not root (the app files are copied in below, owned by that user).
+RUN addgroup --system app && adduser --system --ingroup app --home /home/app app \
+    && mkdir -p /app/data/uploads && chown -R app:app /app
 USER app
 # Claude Code (the `claude` program), pinned to the tested version. It signs in with the
 # CLAUDE_CODE_OAUTH_TOKEN from .env (made with `claude setup-token`).
@@ -43,4 +44,6 @@ COPY --chown=app:app forms ./forms
 RUN mkdir -p /app/data/uploads
 
 ENV APP_PORT=8000
+EXPOSE 8000
+# 127.0.0.1 by default (open it through an SSH tunnel); set APP_HOST=0.0.0.0 to listen on the network.
 CMD ["sh", "-c", "uvicorn backend.main:app --host ${APP_HOST:-127.0.0.1} --port ${APP_PORT}"]

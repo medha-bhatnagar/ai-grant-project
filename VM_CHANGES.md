@@ -188,3 +188,30 @@ The bigger Monday-demo build (Docket tab, uploads, outbox emails) was undone, as
   modular form with the new dates, matching hand math. Browser: one message made both files ($166,500
   a year); both downloaded, and the PDF has 2 filled years plus the justification.
 - To undo: `git revert` this commit.
+
+## Step 10: CV emails approved in the chat (classic Outlook)
+
+- New `judge/mailer.py`: sends through the **classic Outlook desktop app**, as whoever is signed in to
+  it. No password is stored. Windows only; it needs classic Outlook signed in once.
+- `judge/judge.py`: the Judge drafts CV-request emails (`draft_cv_emails`) and sends them
+  (`send_approved_emails`) **only** if the drafts were shown in an earlier message and the user's latest
+  message is a clear yes. That check is in code. `agents/settings.json` `email_test_to` sends every
+  draft to a test address (currently colin.wilour@uconn.edu).
+- Tests use a fake Outlook. **No real email has been sent yet** (classic Outlook isn't signed in on the PC).
+
+## Step 11: merged the team's Nov 22 main (redesign, guests, tests, Graph mail)
+
+The team added a redesigned dashboard (`app.css`, fonts), guest collaborators, real application data,
+Microsoft Graph email for guest codes, `LLM_DB_Integration/` (Ollama + DB) and backend/browser tests.
+Six files conflicted:
+
+- `.env.example`, `compose.yaml`: kept both sides (their Graph/guest settings + our AI settings).
+- `Dockerfile`: kept ours (it already does everything theirs does, plus mongosh, Claude and agents/),
+  with their `EXPOSE 8000` added.
+- `dashboard/Dockerfile`: kept their updated version (compose doesn't use it).
+- `backend/collaboration.py`: took **theirs**. They fixed the `files.main` import their own way.
+- `dashboard/index.html`: took **their redesign** and put the real chat back in: AI replies, short
+  formatting, download and Outlook links, greetings, and the Grant teams card on Shared documents.
+  Chat styles were added at the end of their `app.css`.
+- Tested: the team's 45 backend tests and our 24 AI tests pass. Browser: their new design with demo SPS
+  sign-in; the assistant answered "3 of 5 CVs submitted" via cv_checker.
