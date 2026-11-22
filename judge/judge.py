@@ -715,6 +715,48 @@ def cv_status():
                       ensure_ascii=False)
 
 
+def outlook_link(to, subject, body):
+    """A link that opens a ready-to-send email in Outlook on the web (works with UConn school accounts).
+    Nothing is sent until the person presses Send."""
+    from urllib.parse import quote
+    return ("https://outlook.office.com/mail/deeplink/compose?" +
+            "&".join(f"{k}={quote(v, safe='@')}" for k, v in (("to", to), ("subject", subject), ("body", body)) if v))
+
+
+def cv_email_drafts(sender=""):
+    """A CV-request email for each team member who hasn't submitted a CV. In test mode (settings
+    email_test_to, or EMAIL_TEST_TO) every draft goes to that address instead of the real person."""
+    status = json.loads(cv_status())
+    test_to = (os.environ.get("EMAIL_TEST_TO") or load_agents()["settings"].get("email_test_to") or "").strip()
+    drafts = []
+    for person in status["not_submitted"]:
+        last = re.findall(r"[A-Za-z]+", person["name"])[-1]
+        subject = "CV / biosketch needed for the grant application"
+        body = (f"Dear Dr. {last},\n\nWe are preparing the routing package for the grant application, and we have "
+                f"not yet received your CV (NIH biosketch). Could you please send it at your earliest convenience?"
+                f"\n\nThank you,\n{sender or 'Sponsored Programs Services'}")
+        to = test_to or person["email"]
+        if test_to:
+            body = f"[TEST: this would go to {person['name']} <{person['email'] or 'no address on file'}>]\n\n" + body
+        drafts.append({"to_name": person["name"], "to_email": to, "subject": subject, "body": body,
+                       "outlook_link": outlook_link(to, subject, body)})
+    return drafts, bool(test_to)
+
+
+def draft_cv_emails(sender=""):
+    drafts, test = cv_email_drafts(sender)
+    return json.dumps({"drafts": drafts, "test_mode": test})
+
+
+APPROVE = re.compile(r"\b(yes|yep|yeah|send|approve[d]?|go ahead|confirm(ed)?|ok(ay)?|do it)\b", re.I)
+REFUSE = re.compile(r"\b(no|not|don'?t|cancel|wait|hold|stop|change|edit)\b", re.I)
+
+
+def user_words(message):
+    """The user's own words, without the '(The user is viewing: ...)' line the server adds."""
+    return re.sub(r"^\(The user is viewing:[^\n]*\)\n", "", message or "").strip()
+
+
 def make_budget_spreadsheet(request):
     """The budget_sheet.py pipeline: request -> AI JSON -> checked Excel file. Returns a summary."""
     import budget_sheet
@@ -784,6 +826,15 @@ class Judge:
                                                                         self._event, self.message))
                  for name, spec in agents["specialists"].items()}
         tools.update(TEAM_TOOLS)
+        # Email: drafts are shown first, and sent only after the user approves them in a LATER message.
+        self.turn, self.pending = 0, None
+        tools["draft_cv_emails"] = (
+            "write the CV-request email for each person who hasn't submitted a CV and hold it for approval. "
+            "Nothing is sent. Show the drafts and ask the user to approve. "
+            'args: {"sender": "the signed-in user\'s name"}', self._draft_emails)
+        tools["send_approved_emails"] = (
+            "send the drafts from draft_cv_emails through Outlook, ONLY after the user approved them in their "
+            "latest message ('yes, send them'). args: {}", self._send_emails)
         instructions = (agents["judge"]["instructions"] + agents["judge"].get("guided_flow", [])
                         + agents["settings"].get("reply_style", []))
         self.agent = Agent("judge", agents["judge"]["model"], instructions, tools, self._event)
@@ -791,8 +842,44 @@ class Judge:
     def _event(self, text):
         self.on_event(text)
 
+    def _draft_emails(self, args):
+        drafts, test = cv_email_drafts(args.get("sender", ""))
+        if not drafts:
+            self.pending = None
+            return "Everyone on the team has submitted their CV, so there is no one to email."
+        self.pending = {"turn": self.turn, "drafts": drafts}
+        shown = [{"to": f"{d['to_name']} <{d['to_email'] or 'NO ADDRESS ON FILE: will be skipped'}>",
+                  "subject": d["subject"], "body": d["body"]} for d in drafts]
+        return json.dumps({"drafts": shown, "test_mode": test, "next": (
+            "Show each draft (to, subject, and the message) and ask: 'Send these N emails from your Outlook? "
+            "Reply yes to send.' Nothing has been sent.")})
+
+    def _send_emails(self, args):
+        """The approval check is here in code, so the AI can't send without the user's yes."""
+        words = user_words(self.message)
+        if not self.pending:
+            return "ERROR: there are no drafts to send. Call draft_cv_emails and show them first."
+        if self.pending["turn"] >= self.turn:
+            return "ERROR: the user hasn't seen the drafts yet. Show them and ask for approval; don't send."
+        if not APPROVE.search(words) or REFUSE.search(words):
+            return f"ERROR: the user's message ({words[:80]!r}) isn't a clear approval. Ask them to reply 'yes, send'."
+        import mailer
+        results = []
+        for d in self.pending["drafts"]:
+            if not d["to_email"]:
+                results.append(f"SKIPPED {d['to_name']}: no email address on file")
+                continue
+            try:
+                sender = mailer.send(d["to_email"], d["subject"], d["body"])
+                results.append(f"SENT to {d['to_name']} <{d['to_email']}> from {sender}")
+            except mailer.MailError as e:
+                results.append(f"NOT SENT to {d['to_name']}: {e}. Instead, open it in Outlook: {d['outlook_link']}")
+        self.pending = None
+        return "\n".join(results)
+
     def reply(self, message):
         self.message = message
+        self.turn += 1
         return self.agent.ask(message)
 
 

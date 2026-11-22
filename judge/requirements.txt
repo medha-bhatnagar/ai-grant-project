@@ -7,3 +7,4 @@ python-docx==1.1.2
 openpyxl==3.1.5
 pycel==1.0b30
 reportlab==4.2.5
+pywin32==308; sys_platform == "win32"

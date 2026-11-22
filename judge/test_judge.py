@@ -217,5 +217,40 @@ def test_form_is_filled_from_the_spreadsheet(tmp_path):
     assert budget_form.make_form(tmp_path / "edited.xlsx")["per_year"][0]["direct"] == 75000   # ... the form follows
 
 
+def test_cv_emails_open_in_outlook_and_demo_mode_redirects(monkeypatch):
+    from urllib.parse import parse_qs, urlparse
+    monkeypatch.delenv("EMAIL_TEST_TO", raising=False)
+    monkeypatch.setattr(judge, "load_agents", lambda: {"settings": {"email_test_to": ""}})
+    d = json.loads(judge.draft_cv_emails("Demo SPS Staff"))
+    assert [x["to_name"] for x in d["drafts"]] == ["Chih-Ming Tsai", "Issac Thomasen"] and not d["test_mode"]
+    link = urlparse(d["drafts"][0]["outlook_link"])
+    q = parse_qs(link.query)
+    assert link.netloc == "outlook.office.com" and q["to"] == ["drowe@uchc.edu"]
+    assert "Dear Dr. Tsai" in q["body"][0] and "Demo SPS Staff" in q["body"][0]
+    assert "to" not in parse_qs(urlparse(d["drafts"][1]["outlook_link"]).query)   # Thomasen: no address on file
+    monkeypatch.setenv("EMAIL_TEST_TO", "me@example.edu")                         # demo mode: everything to me
+    d = json.loads(judge.draft_cv_emails("Demo SPS Staff"))
+    assert d["test_mode"] and all(parse_qs(urlparse(x["outlook_link"]).query)["to"] == ["me@example.edu"]
+                                  for x in d["drafts"])
+
+
+def test_emails_are_sent_only_after_approval_in_a_later_message(monkeypatch):
+    import mailer
+    sent = []
+    monkeypatch.setattr(mailer, "send", lambda to, subject, body: sent.append(to) or "me@uconn.edu")   # never real
+    monkeypatch.setenv("EMAIL_TEST_TO", "tester@example.edu")
+    j = judge.Judge(on_event=lambda t: None)
+    j.message, j.turn = "Email the people who haven't sent their CV", 1
+    drafts = json.loads(j._draft_emails({"sender": "Demo SPS Staff"}))
+    assert len(drafts["drafts"]) == 2 and drafts["test_mode"]
+    assert "hasn't seen" in j._send_emails({}) and sent == []           # same message: refused
+    j.message, j.turn = "(The user is viewing: Docket)\nno, wait", 2
+    assert "isn't a clear approval" in j._send_emails({}) and sent == []  # not a yes: refused
+    j.message = "(The user is viewing: Docket)\nYes, send them"
+    out = j._send_emails({})
+    assert sent == ["tester@example.edu", "tester@example.edu"] and out.count("SENT") == 2
+    assert "no drafts" in j._send_emails({})                              # can't send twice
+
+
 def test_judge_has_the_team_tools():
     assert {"find_person", "list_team", "add_team_member"} <= set(judge.Judge(on_event=lambda t: None).agent.tools)

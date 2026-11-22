@@ -5,6 +5,8 @@
   "library_db": "team44_shc22039_demo",
   "library_collection": "past_submissions",
   "_library_note": "The team's library of past grant applications (chunks made by the team's uploader). Read only: the Judge never writes there. Override with LIBRARY_DB / LIBRARY_COLLECTION.",
+  "email_test_to": "colin.wilour@uconn.edu",
+  "_email_note": "Emails open in Outlook on the web (school account) for a person to press Send; the app never sends by itself. While demoing, put YOUR OWN address in email_test_to: every draft then goes to you instead of the real person (the sample files contain real UConn faculty addresses). Leave it empty to address drafts to the real people.",
   "_note": "Never put a password here. For a database password, set the MONGO_URL environment variable instead; it overrides mongo_url.",
   "_models_note": "A model starting with 'claude' runs through your Claude login (claude auth login). Any other name runs locally in Ollama. Local models used before: qwen2.5:7b (database: qwen2.5-coder:7b).",
   "reply_style": [
